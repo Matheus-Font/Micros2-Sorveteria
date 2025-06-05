@@ -20,9 +20,19 @@
 #define IDC_VOLUME                      1002
 #define IDC_SLIDER1                     1002
 #define IDC_PH                          1003
+#define IDC_DESPERDICIO2                1003
 #define IDC_TEMP                        1004
 #define IDC_RESET                       1005
+#define IDC_PROGRESSTEMP                1005
 #define IDC_CONNECT                     1006
+#define IDC_RADIOTEMP                   1006
+#define IDC_RADIOPH                     1007
+#define IDC_RADIO3                      1011
+#define IDC_STATICTPH                   1106
+#define IDC_TANQUE1                     1101
+#define IDC_TANQUE2                     1102
+#define IDC_TANQUE3                     1103
+#define IDC_TEMPPHVALOR                 1104
 #define IDD_MAIN                        1300
 #define IDC_MENU                        1301
 #define IDD_MENU                        1302
@@ -36,7 +46,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1003
+#define _APS_NEXT_CONTROL_VALUE         1013
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

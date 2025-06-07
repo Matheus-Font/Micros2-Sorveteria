@@ -60,5 +60,20 @@
     <Image Include="..\icone.ico">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
+    <Image Include="..\tanquebase.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\tanquebase.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\Esteira.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\pote.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\pote.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
   </ItemGroup>
 </Project>

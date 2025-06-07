@@ -18,11 +18,13 @@ int volume = 50;
 int ph1 = 7; // pH do tanque 1
 int ph2 = 13; // pH do tanque 2
 int ph3 = 5; // pH do tanque 3
-int temperatura = 50;
 int temp1 = 30; // Temperatura do tanque 1
 int temp2 = 60; // Temperatura do tanque 2
 int temp3 = 80; // Temperatura do tanque 3
 int tanqueSelecionado = 1; // Variável para armazenar o tanque selecionado (1, 2 ou 3)
+
+static int pos_x = -100; // posição inicial X
+static int pos_y = 355; // posição Y fixa (ajuste conforme necessário)
 
 // Declarações de encaminhamento de funções incluídas nesse módulo de código:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -31,45 +33,48 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MainDialogProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MenuDialogProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Coloque o código aqui.
-
-    // Inicializar cadeias de caracteres globais
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_WINDOWSPROJECT, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
-    // Realize a inicialização do aplicativo:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
+    // REMOVE ou COMENTE essa linha ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+    // if (!InitInstance(hInstance, nCmdShow)) return FALSE;
+
+    // Mostra a tela de boas-vindas primeiro
+    INT_PTR ret = DialogBox(hInstance, MAKEINTRESOURCE(IDD_WELCOME), NULL, WelcomeDialogProc);
+    if (ret == IDOK) {
+        // Agora sim mostra a janela principal
+        HWND hDlg = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN), NULL, MainDialogProc);
+        if (!hDlg)
+            return FALSE;
+        ShowWindow(hDlg, nCmdShow);
+        UpdateWindow(hDlg);
+    }
+    else {
+        return FALSE; // Usuário cancelou na tela de boas-vindas
     }
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSPROJECT));
-
     MSG msg;
 
-    // Loop de mensagem principal:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
+    while (GetMessage(&msg, nullptr, 0, 0)) {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
     }
 
-    return (int) msg.wParam;
+    return (int)msg.wParam;
 }
+
 
 
 
@@ -95,8 +100,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_WINDOWSPROJECT);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
-    wcex.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ICONE));
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICONE));
+
 
 
 
@@ -232,10 +238,17 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     {
     case WM_INITDIALOG: 
     {
+        //Timers
+       
+
+
         //FORÇA O ICONE NA JANELA E NA BARRA DE TAREFAS.
-        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1));
-        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        //HICON hIcon = LoadIcon(NULL, IDI_EXCLAMATION); // Teste com ícone nativo
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICONE));
+        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
+
+
 
 		//Botão de Temperatura / Ph / Tanque selecionado
 		CheckDlgButton(hDlg, IDC_TANQUE1, BST_CHECKED);   // Estado inicial do botão do tanque 1
@@ -249,13 +262,66 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 		// Inicializa a barra de progresso
 		SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 100)); // Limites de escala da barra de progresso
-        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, temperatura, 0); // Valor da barra de progresso
+        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, temp1, 0); // Valor da barra de progresso
         HWND hProg = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
         SendMessage(hProg, PBM_SETBARCOLOR, 0, (LPARAM)RGB(150, 0, 200)); // CORES RGB (VALOR RED, VALOR GREEN, VALOR BLUE)
 		//SendMessage(hProg, PBM_SETBKCOLOR, 0, (LPARAM)RGB(230, 230, 230)); // SE QUISER MUDAR A COR DE FUNDO DA BARRA DE PROGRESSO.
+
+        //CREME
+        // Configura faixa da barra de progresso
+        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        // Define a posição como 50
+        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, 50, 0);
+        // Define a cor da barra como amarelo
+        HWND hProgCreme = GetDlgItem(hDlg, IDC_CREME);
+        SendMessage(hProgCreme, PBM_SETBARCOLOR, 0, (LPARAM)RGB(255, 255, 100));
+
+        // MORANGO
+        // Configura faixa da barra de progresso
+        SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        // Define a posição como 50
+        SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, 50, 0);
+        // Define a cor da barra como amarelo
+        HWND hProgMorango = GetDlgItem(hDlg, IDC_MORANGO);
+        SendMessage(hProgMorango, PBM_SETBARCOLOR, 0, (LPARAM)RGB(255, 80, 80));
+
+        // CHOCOLATE
+        // Configura faixa da barra de progresso
+        SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        // Define a posição como 50
+        SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, 50, 0);
+        // Define a cor da barra como amarelo
+        HWND hProgChocolate = GetDlgItem(hDlg, IDC_CHOCOLATE);
+        SendMessage(hProgChocolate, PBM_SETBARCOLOR, 0, (LPARAM)RGB(123, 63, 0));
+
+        HWND hPote = GetDlgItem(hDlg, IDC_POTE);
+		SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0, //Posicão inicial do pote
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+
+
+        SetTimer(hDlg, 1, 1, NULL); // Timer com ID 1 e intervalo de 1ms
         
+      
         return (INT_PTR)TRUE;
     }
+    case WM_TIMER:
+        if (wParam == 1)
+        {
+            // Só move se o checkbox estiver marcado
+            if (IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED)
+            {
+                pos_x += 1; // Velocidade
+                SetWindowPos(GetDlgItem(hDlg, IDC_POTE), 0, pos_x, pos_y, 0, 0,
+                    SWP_NOSIZE | SWP_SHOWWINDOW);
+
+                if (pos_x > 1150) {
+                 pos_x = -100; // Reseta a posição
+                 
+                }
+            }
+        }
+        break;
+
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -286,6 +352,8 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         PostQuitMessage(0);
         break;
     }
+
+         
     return FALSE;
 }
 //Dialog de About
@@ -316,8 +384,11 @@ INT_PTR CALLBACK MenuDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     switch (message)
     {
     case WM_INITDIALOG:
-        // Você pode inicializar a progress bar aqui, se quiser
-        return (INT_PTR)TRUE;
+    {
+       
+    }
+    return TRUE;
+
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
@@ -329,4 +400,36 @@ INT_PTR CALLBACK MenuDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     }
     return (INT_PTR)FALSE;
 }
+//Janela de boas-vindas
+INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+    case WM_INITDIALOG: {
+        //FORÇA O ICONE 
+        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICONE));
+        return (INT_PTR)TRUE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            TCHAR serial[100];
+            GetDlgItemText(hDlg, IDC_EDIT_SERIAL, serial, 100);
+
+            if (wcslen(serial) == 0) {
+                MessageBox(hDlg, L"Por favor, insira o numero serial. Exemplo: COM1", L"Aviso", MB_OK | MB_ICONWARNING);
+                return (INT_PTR)TRUE;
+            }
+
+            EndDialog(hDlg, IDOK);
+            return (INT_PTR)TRUE;
+        }
+        else if (LOWORD(wParam) == IDCANCEL) {
+            EndDialog(hDlg, IDCANCEL);
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
 

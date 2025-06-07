@@ -140,10 +140,15 @@
     <ResourceCompile Include="WindowsProject.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\Esteira.bmp" />
     <Image Include="..\icone.ico" />
     <Image Include="..\icone.png" />
     <Image Include="..\icone_32x32.png" />
     <Image Include="..\icone_pequeno.ico" />
+    <Image Include="..\pote.bmp" />
+    <Image Include="..\pote.png" />
+    <Image Include="..\tanquebase.bmp" />
+    <Image Include="..\tanquebase.png" />
     <Image Include="icon1.ico" />
     <Image Include="small.ico" />
     <Image Include="WindowsProject.ico" />

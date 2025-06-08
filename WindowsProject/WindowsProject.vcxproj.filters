@@ -27,9 +27,21 @@
     <ClInclude Include="WindowsProject.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
+    <ClInclude Include="SerialPort.h">
+      <Filter>Arquivos de Origem</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulatorProtocol.h">
+      <Filter>Arquivos de Origem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WindowsProject.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulatorProtocol.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,6 +85,21 @@
       <Filter>Arquivos de Recurso</Filter>
     </Image>
     <Image Include="..\pote.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\TANQUE.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\TANQUEMISTURA.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\CANO1.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\CANOTESTE.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\CANOTESTE2.bmp">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
   </ItemGroup>

@@ -15,16 +15,22 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // o nome da classe da janela pr
 //VARIÁVEIS GLOBAIS PARA O PROJETO:
 int desperdicio = 15;
 int volume = 50;
-int ph1 = 7; // pH do tanque 1
-int ph2 = 13; // pH do tanque 2
-int ph3 = 5; // pH do tanque 3
-int temp1 = 30; // Temperatura do tanque 1
-int temp2 = 60; // Temperatura do tanque 2
-int temp3 = 80; // Temperatura do tanque 3
+int volumecreme = 50;
+int volumechocolate = 50;
+int volumemorango = 50;
+int volumepote = 2.5; // Volume do pote em litros (2.5L)
+int phmixer = 0; // pH do mixer (inicialmente indefinido, pode ser ajustado depois)
+int ph1 = 7; // pH do tanque creme
+int ph2 = 13; // pH do tanque morango
+int ph3 = 5; // pH do tanque chocolate
+int temp1 = 30; // Temperatura do tanque creme
+int temp2 = 60; // Temperatura do tanque morango
+int temp3 = 80; // Temperatura do tanque chocolate
+int tempmixer = 70; // Temperatura inicial do mixer
 int tanqueSelecionado = 1; // Variável para armazenar o tanque selecionado (1, 2 ou 3)
 
-static int pos_x = -100; // posição inicial X
-static int pos_y = 355; // posição Y fixa (ajuste conforme necessário)
+static int pos_x = 340; // posição inicial X
+static int pos_y = 390; // posição Y fixa (ajuste conforme necessário)
 
 // Declarações de encaminhamento de funções incluídas nesse módulo de código:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -89,17 +95,17 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINDOWSPROJECT));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_WINDOWSPROJECT);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINDOWSPROJECT));
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_WINDOWSPROJECT);
+    wcex.lpszClassName = szWindowClass;
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ICONE));
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICONE));
 
@@ -151,33 +157,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // Analise as seleções do menu:
+        switch (wmId)
         {
-            int wmId = LOWORD(wParam);
-            // Analise as seleções do menu:
-            switch (wmId)
-            {
-            case IDC_MENU:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_MENU), hWnd, MenuDialogProc);
-                break;
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        case IDC_MENU:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_MENU), hWnd, MenuDialogProc);
+            break;
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Adicione qualquer código de desenho que use hdc aqui...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        // TODO: Adicione qualquer código de desenho que use hdc aqui...
+        EndPaint(hWnd, &ps);
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -190,43 +196,45 @@ void AtualizaValorTempPh(HWND hDlg) {
     int valor = 0;
     HWND hProg = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
 
-    // Qual tanque está selecionado?
-    if (IsDlgButtonChecked(hDlg, IDC_TANQUE1) == BST_CHECKED) tanqueSelecionado = 1;
-    else if (IsDlgButtonChecked(hDlg, IDC_TANQUE2) == BST_CHECKED) tanqueSelecionado = 2;
-    else if (IsDlgButtonChecked(hDlg, IDC_TANQUE3) == BST_CHECKED) tanqueSelecionado = 3;
+    // A barra de progresso sempre mostra a temperatura do MIXER
+    SendMessage(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+    SendMessage(hProg, PBM_SETPOS, tempmixer, 0);
 
-    // Temperatura
+    // Atualiza textos da interface dependendo se está em modo temperatura ou pH
     if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED) {
-        SetDlgItemText(hDlg, IDC_STATICTPH, L"Temperatura (\x00B0\C):"); // Troca o texto do lado do valor numerico
-		SetDlgItemText(hDlg, IDC_STATIC, L"Temperatura (\x00B0\C):"); //Troca o texto encima da barra de progresso
-        switch (tanqueSelecionado) {
-        case 1: valor = temp1; break;
-        case 2: valor = temp2; break;
-        case 3: valor = temp3; break;
-        }
-
-        // Atualiza faixa e valor da barra para temperatura (0–100)
-        SendMessage(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
-        SendMessage(hProg, PBM_SETPOS, valor, 0);
+        SetDlgItemText(hDlg, IDC_STATICTPH, L"Temperatura (\x00B0\C):");
+        SetDlgItemText(hDlg, IDC_STATIC, L"Temperatura (\x00B0\C):");
+        valor = tempmixer;
     }
-
-    // pH
     else {
         SetDlgItemText(hDlg, IDC_STATICTPH, L"Valor de pH:");
         SetDlgItemText(hDlg, IDC_STATIC, L"Valor de pH:");
-
-        switch (tanqueSelecionado) {
-        case 1: valor = ph1; break;
-        case 2: valor = ph2; break;
-        case 3: valor = ph3; break;
-        }
-
-        // Atualiza faixa e valor da barra para pH (0–14)
-        SendMessage(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 14));
-        SendMessage(hProg, PBM_SETPOS, valor, 0);
+        valor = phmixer;
     }
 
-    // Atualiza o valor mostrado na caixa de texto
+    // Atualiza os campos de exibição ao lado de cada tanque
+    WCHAR buffer[16];
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temp1);
+    SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temp2);
+    SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temp3);
+    SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
+    SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
+
+    if (IsDlgButtonChecked(hDlg, IDC_RADIOPH) == BST_CHECKED) {
+        swprintf(buffer, 16, L"pH %d", ph1);
+        SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
+        swprintf(buffer, 16, L"pH %d", ph2);
+        SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
+        swprintf(buffer, 16, L"pH %d", ph3);
+        SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
+        swprintf(buffer, 16, L"pH %d", phmixer);
+        SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
+    }
+
+    // Atualiza o valor exibido ao lado da barra
     SetDlgItemInt(hDlg, IDC_TEMP, valor, FALSE);
 }
 
@@ -236,12 +244,9 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 {
     switch (message)
     {
-    case WM_INITDIALOG: 
+    case WM_INITDIALOG:
     {
-        //Timers
-       
-
-
+        
         //FORÇA O ICONE NA JANELA E NA BARRA DE TAREFAS.
         //HICON hIcon = LoadIcon(NULL, IDI_EXCLAMATION); // Teste com ícone nativo
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
@@ -249,23 +254,33 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
 
 
-
-		//Botão de Temperatura / Ph / Tanque selecionado
-		CheckDlgButton(hDlg, IDC_TANQUE1, BST_CHECKED);   // Estado inicial do botão do tanque 1
+        //Botão de Temperatura / Ph  
         CheckDlgButton(hDlg, IDC_RADIOTEMP, BST_CHECKED); // Estado inicial do botão de temperatura
-		SetDlgItemInt(hDlg, IDC_TEMP, temp1, FALSE); // Inicializa o valor de temperatura com a variável global temp1
+        // Atualiza todos os campos (temperatura, pH, labels, barra)
+        AtualizaValorTempPh(hDlg);
+        SetDlgItemInt(hDlg, IDC_TEMP, tempmixer, FALSE);; // Inicializa o valor de temperatura com a variável global tempmixer
 
+		// Inicializa os valores de temperatura nos tanques
+        WCHAR buffer[16];
+        swprintf(buffer, 16, L"%d(C)", temp2);
+        SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
+        swprintf(buffer, 16, L"%d(C)", temp1);
+        SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
+        swprintf(buffer, 16, L"%d(C)", temp3);
+        SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
+        swprintf(buffer, 16, L"%d(C)", tempmixer);
+        SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
 
-		// Inicializa os valores dos controles com as variáveis globais
+        // Inicializa os valores dos controles com as variáveis globais
         SetDlgItemInt(hDlg, IDC_DESPERDICIO, desperdicio, FALSE);
         SetDlgItemInt(hDlg, IDC_VOLUME, volume, FALSE);
 
-		// Inicializa a barra de progresso
-		SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 100)); // Limites de escala da barra de progresso
-        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, temp1, 0); // Valor da barra de progresso
+        // Inicializa a barra de progresso
+        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 100)); // Limites de escala da barra de progresso
+        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, tempmixer, 0); // Valor da barra de progresso
         HWND hProg = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
-        SendMessage(hProg, PBM_SETBARCOLOR, 0, (LPARAM)RGB(150, 0, 200)); // CORES RGB (VALOR RED, VALOR GREEN, VALOR BLUE)
-		//SendMessage(hProg, PBM_SETBKCOLOR, 0, (LPARAM)RGB(230, 230, 230)); // SE QUISER MUDAR A COR DE FUNDO DA BARRA DE PROGRESSO.
+        SendMessage(hProg, PBM_SETBARCOLOR, 0, (LPARAM)RGB(255, 0, 0)); // CORES RGB (VALOR RED, VALOR GREEN, VALOR BLUE)
+        //SendMessage(hProg, PBM_SETBKCOLOR, 0, (LPARAM)RGB(230, 230, 230)); // SE QUISER MUDAR A COR DE FUNDO DA BARRA DE PROGRESSO.
 
         //CREME
         // Configura faixa da barra de progresso
@@ -295,28 +310,28 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         SendMessage(hProgChocolate, PBM_SETBARCOLOR, 0, (LPARAM)RGB(123, 63, 0));
 
         HWND hPote = GetDlgItem(hDlg, IDC_POTE);
-		SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0, //Posicão inicial do pote
-        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
+        SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0, //Posicão inicial do pote
+            SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW);
 
 
-        SetTimer(hDlg, 1, 1, NULL); // Timer com ID 1 e intervalo de 1ms
-        
-      
+        SetTimer(hDlg, 1, 10, NULL); // Timer com ID 1 e intervalo de 10ms
+
+        AtualizaValorTempPh(hDlg);
+
         return (INT_PTR)TRUE;
     }
-    case WM_TIMER:
-        if (wParam == 1)
+	case WM_TIMER:  // Caso o timer seja ativado
+		if (wParam == 1) // Verifica se é o timer com ID 1
         {
             // Só move se o checkbox estiver marcado
             if (IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED)
             {
-                pos_x += 1; // Velocidade
-                SetWindowPos(GetDlgItem(hDlg, IDC_POTE), 0, pos_x, pos_y, 0, 0,
-                    SWP_NOSIZE | SWP_SHOWWINDOW);
+				pos_x += 1; // Velocidade de movimento do pote (1 pixel por tick)
+                SetWindowPos(GetDlgItem(hDlg, IDC_POTE), 0, pos_x, pos_y, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 
-                if (pos_x > 1150) {
-                 pos_x = -100; // Reseta a posição
-                 
+                if (pos_x > 1050) {
+                    pos_x = 340; // Reseta a posição
+
                 }
             }
         }
@@ -325,26 +340,24 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
-		// Botões de controle
-		case IDC_RADIOTEMP: // Botão de temperatura selecionado
-        case IDC_RADIOPH: // Botão de pH selecionado
-		case IDC_TANQUE1: // Botão do tanque 1 selecionado
-		case IDC_TANQUE2: // Botão do tanque 2 selecionado
-		case IDC_TANQUE3: // Botão do tanque 3 selecionado
-			AtualizaValorTempPh(hDlg); // Chama a função para atualizar o valor de temperatura ou pH
+            // Botões de controle
+        case IDC_RADIOTEMP:
+        case IDC_RADIOPH:
+            AtualizaValorTempPh(hDlg);
             break;
 
-        // Coisas da janela extra, caso precise.
+
+            // Coisas da janela extra, caso precise.
         case IDC_MENU:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_MENU), hDlg, MenuDialogProc);
             break;
-        // Se clicar "Fechar"...
+            // Se clicar "Fechar"...
         case IDCANCEL:
             DestroyWindow(hDlg);
             break;
         }
         break;
-	// Se clicar no "X" da janela principal...
+        // Se clicar no "X" da janela principal...
     case WM_CLOSE:
         DestroyWindow(hDlg);
         break;
@@ -353,7 +366,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         break;
     }
 
-         
+
     return FALSE;
 }
 //Dialog de About
@@ -385,7 +398,7 @@ INT_PTR CALLBACK MenuDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     {
     case WM_INITDIALOG:
     {
-       
+
     }
     return TRUE;
 
@@ -431,5 +444,3 @@ INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARA
     }
     return (INT_PTR)FALSE;
 }
-
-

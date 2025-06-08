@@ -130,16 +130,23 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SerialPort.h" />
+    <ClInclude Include="SimulatorProtocol.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WindowsProject.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SerialPort.cpp" />
+    <ClCompile Include="SimulatorProtocol.cpp" />
     <ClCompile Include="WindowsProject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsProject.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\CANO1.bmp" />
+    <Image Include="..\CANOTESTE.bmp" />
+    <Image Include="..\CANOTESTE2.bmp" />
     <Image Include="..\Esteira.bmp" />
     <Image Include="..\icone.ico" />
     <Image Include="..\icone.png" />
@@ -147,8 +154,10 @@
     <Image Include="..\icone_pequeno.ico" />
     <Image Include="..\pote.bmp" />
     <Image Include="..\pote.png" />
+    <Image Include="..\TANQUE.bmp" />
     <Image Include="..\tanquebase.bmp" />
     <Image Include="..\tanquebase.png" />
+    <Image Include="..\TANQUEMISTURA.bmp" />
     <Image Include="icon1.ico" />
     <Image Include="small.ico" />
     <Image Include="WindowsProject.ico" />

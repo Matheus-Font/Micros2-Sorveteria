@@ -102,5 +102,20 @@
     <Image Include="..\CANOTESTE2.bmp">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
+    <Image Include="..\valvula_cruz.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\valvula_x.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\VALVULAFECHADA.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\VALVULAABERTA.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\icone_.ico">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
   </ItemGroup>
 </Project>

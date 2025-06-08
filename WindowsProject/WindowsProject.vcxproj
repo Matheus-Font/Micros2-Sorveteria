@@ -150,6 +150,7 @@
     <Image Include="..\Esteira.bmp" />
     <Image Include="..\icone.ico" />
     <Image Include="..\icone.png" />
+    <Image Include="..\icone_.ico" />
     <Image Include="..\icone_32x32.png" />
     <Image Include="..\icone_pequeno.ico" />
     <Image Include="..\pote.bmp" />
@@ -158,6 +159,10 @@
     <Image Include="..\tanquebase.bmp" />
     <Image Include="..\tanquebase.png" />
     <Image Include="..\TANQUEMISTURA.bmp" />
+    <Image Include="..\VALVULAABERTA.bmp" />
+    <Image Include="..\VALVULAFECHADA.bmp" />
+    <Image Include="..\valvula_cruz.bmp" />
+    <Image Include="..\valvula_x.bmp" />
     <Image Include="icon1.ico" />
     <Image Include="small.ico" />
     <Image Include="WindowsProject.ico" />

@@ -21,13 +21,16 @@
 #define IDD_WELCOME                     156
 #define IDC_POTE                        160
 #define IDI_ICON3                       162
-#define IDI_ICONE                       162
 #define IDB_TANQUE                      163
 #define IDB_TANQUEMISTURA               164
 #define IDB_CANO1                       165
 #define IDB_CANO2                       166
 #define IDB_CANO3                       167
 #define IDB_pote                        169
+#define IDB_VALVULAON                   172
+#define IDB_VALVULAOF                   175
+#define IDI_ICON4                       176
+#define IDI_ICONE                       176
 #define IDC_DESPERDICIO                 1001
 #define IDC_VOLUME                      1002
 #define IDC_SLIDER1                     1002
@@ -46,6 +49,7 @@
 #define IDC_EDITSERIAL                  1019
 #define IDC_EDIT_SERIAL                 1020
 #define IDC_CHECK1                      1020
+#define IDC_CHECKMORANGO                1020
 #define IDC_ESTEIRAON                   1021
 #define IDC_TANQUECREME                 1022
 #define IDC_TANQUEMORANGO               1023
@@ -65,12 +69,46 @@
 #define IDC_TPHMIXER                    1036
 #define IDC_STATICCHOCOLATE             1039
 #define IDC_CANO1MIXER                  1040
+#define IDC_TANQUECONGELAMENTO          1041
+#define IDC_PROGRESS1                   1042
+#define IDC_PROGRESSCONGELAMENTO        1043
+#define IDC_TPHCONGELAMENTO             1045
+#define IDC_CHECKCREME                  1050
+#define IDC_CHECKCHOCOLATE              1052
+#define IDC_STATIC30                    1053
+#define IDC_STATIC31                    1054
+#define IDC_STATIC32                    1055
+#define IDC_STATIC33                    1056
+#define IDC_STATIC34                    1057
+#define IDC_CHECKMIXER                  1058
+#define IDC_CHECKCONGELADO              1059
 #define IDC_TEMPPHVALOR                 1104
 #define IDC_STATICTPH                   1106
+#define IDC_VOLUMEMIXER                 1200
+#define IDC_VOLUMEMORANGO               1203
+#define IDC_VOLUMECHOCOLATE             1208
+#define IDC_VOLUMECREME                 1209
+#define IDC_VOLUMECONGELAMENTO          1210
+#define IDC_VOLUMECONGELAMENTO2         1211
+#define IDC_VOLUMEPOTE                  1215
 #define IDD_MAIN                        1300
 #define IDC_MENU                        1301
-#define IDD_MENU                        1302
 #define IDC_PROGRESS                    1303
+#define IDC_TROCARSERIAL                1304
+#define IDC_VALVULAONCREME              1501
+#define IDC_VALVULAONMORANGO            1502
+#define IDC_VALVULAONCHOCOLATE          1503
+#define IDC_VALVULAOFFCREME             1504
+#define IDC_VALVULAOFFMORANGO           1505
+#define IDC_VALVULAOFFCHOCOLATE         1506
+#define IDC_VALVULAONCREME2             1507
+#define IDC_VALVULAONMORANGO2           1507
+#define IDC_VALVULAONMIXER              1507
+#define IDC_VALVULAOFFCREME2            1508
+#define IDC_VALVULAOFFMORANGO2          1508
+#define IDC_VALVULAOFFMIXER             1508
+#define IDC_VALVULAONCONGELADO          1509
+#define IDC_VALVULAOFFCONGELADO         1510
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -78,9 +116,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        170
+#define _APS_NEXT_RESOURCE_VALUE        177
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1041
+#define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

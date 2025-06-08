@@ -117,5 +117,14 @@
     <Image Include="..\icone_.ico">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
+    <Image Include="..\animacao.gif">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\MIX1.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\MIX2.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
   </ItemGroup>
 </Project>

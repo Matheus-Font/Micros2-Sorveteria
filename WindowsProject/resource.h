@@ -29,8 +29,10 @@
 #define IDB_pote                        169
 #define IDB_VALVULAON                   172
 #define IDB_VALVULAOF                   175
-#define IDI_ICON4                       176
 #define IDI_ICONE                       176
+#define IDB_MIX1                        177
+#define IDB_BITMAP2                     178
+#define IDB_MIX2                        178
 #define IDC_DESPERDICIO                 1001
 #define IDC_VOLUME                      1002
 #define IDC_SLIDER1                     1002
@@ -71,8 +73,10 @@
 #define IDC_CANO1MIXER                  1040
 #define IDC_TANQUECONGELAMENTO          1041
 #define IDC_PROGRESS1                   1042
+#define IDC_PROGRESSPOTE                1042
 #define IDC_PROGRESSCONGELAMENTO        1043
 #define IDC_TPHCONGELAMENTO             1045
+#define IDC_TPHCONGELAMENTO2            1047
 #define IDC_CHECKCREME                  1050
 #define IDC_CHECKCHOCOLATE              1052
 #define IDC_STATIC30                    1053
@@ -82,6 +86,10 @@
 #define IDC_STATIC34                    1057
 #define IDC_CHECKMIXER                  1058
 #define IDC_CHECKCONGELADO              1059
+#define IDC_COMBO1                      1060
+#define IDC_MIX1                        1061
+#define IDC_MIX2                        1062
+#define IDC_PROGRESS2                   1063
 #define IDC_TEMPPHVALOR                 1104
 #define IDC_STATICTPH                   1106
 #define IDC_VOLUMEMIXER                 1200
@@ -116,9 +124,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        177
+#define _APS_NEXT_RESOURCE_VALUE        179
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1060
+#define _APS_NEXT_CONTROL_VALUE         1064
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

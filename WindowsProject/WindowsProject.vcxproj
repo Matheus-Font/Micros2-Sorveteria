@@ -144,6 +144,7 @@
     <ResourceCompile Include="WindowsProject.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\animacao.gif" />
     <Image Include="..\CANO1.bmp" />
     <Image Include="..\CANOTESTE.bmp" />
     <Image Include="..\CANOTESTE2.bmp" />
@@ -153,6 +154,8 @@
     <Image Include="..\icone_.ico" />
     <Image Include="..\icone_32x32.png" />
     <Image Include="..\icone_pequeno.ico" />
+    <Image Include="..\MIX1.bmp" />
+    <Image Include="..\MIX2.bmp" />
     <Image Include="..\pote.bmp" />
     <Image Include="..\pote.png" />
     <Image Include="..\TANQUE.bmp" />

@@ -20,7 +20,7 @@ float volumecreme = 30;
 float volumechocolate = 30;
 float volumemorango = 30;
 float volumecongelamento = 0; 
-float volumepote = 2; 
+float volumepote = 0; 
 float vazao = 0.02f; // vazão em litros 0.2L/s // 0.002f= 2mL/s (2mL por segundo)
 int phmixer = 0; // pH do mixer (inicialmente indefinido, pode ser ajustado depois)
 int ph1 = 7; // pH do tanque creme
@@ -297,21 +297,6 @@ void AtualizaVolumes(HWND hDlg) {
     SetDlgItemText(hDlg, IDC_VOLUMEPOTE, buffer);
 }
 
-/**
- * @brief Procedimento do diálogo principal.
- * @param hDlg Handle do diálogo.
- * @param message Mensagem recebida.
- * @param wParam Parâmetro adicional da mensagem.
- * @param lParam Parâmetro adicional da mensagem.
- * @return TRUE se a mensagem foi processada, FALSE caso contrário.
- */
-void AtualizaPosicaoPote(HWND hDlg) {
-   // HWND hPote = GetDlgItem(hDlg, IDC_POTE);
-   
-   // SetWindowPos(hPote, 0, pos_x, pos_y, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
-}
-
-
 INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -403,7 +388,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         SetWindowPos(hPote, HWND_BOTTOM, pos_x, pos_y, 0, 0,
             SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);  // pote no fundo
 
-        ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_HIDE);
+        ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SWP_SHOWWINDOW);
 
         HANDLE hSerial = CreateFileA(
             serialPort,                // usa o valor digitado
@@ -413,7 +398,6 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         );
 
         SetTimer(hDlg, 1, 10, NULL); // Timer com ID 1 e intervalo de 10ms
-        AtualizaPosicaoPote(hDlg);
         AtualizaVolumes(hDlg);
         AtualizaValorTempPh(hDlg);
 
@@ -423,7 +407,6 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
     {
         if (wParam == 1) // Verifica se é o timer com ID 1
         {
-            AtualizaPosicaoPote(hDlg);
             // Transfere conteúdo do mixer para congelamento
             if (IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED && volumemixer >= vazao) {
                 volumemixer -= vazao;
@@ -455,31 +438,33 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 pos_x += 1; // Velocidade de movimento do pote (1 pixel por tick)
 				pos_y = 592; 
               
-
-                if (pos_x >= 670)
+                // Verifica se pote está abaixo do mixer
+                if (pos_x >= 635 && pos_x <= 705)
                 {
-                    pos_x = 670;
-
-                    // Para o movimento e desabilita botão da esteira
-                    CheckDlgButton(hDlg, IDC_ESTEIRAON, BST_UNCHECKED);
-
-                    // Mostra a barra de progresso do pote
-                    ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_SHOW);
-                    poteAbaixoDoMixer = pos_x; 
+                    poteAbaixoDoMixer = true; 
                     EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE);
                 }
                 else
                 {
                     poteAbaixoDoMixer = false;
                 }
+
+				// Verifica se o pote passou do limite direito
+                if (pos_x > 1150) {
+                    pos_x = 340; // Reseta a posição do pote se passar do limite
+                    pos_y = 592; // Mantém a posição Y fixa
+                    ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_HIDE); // Esconde a barra de progresso do pote
+					EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE); // Desabilita o botão de esteira quando o pote volta ao início
+
+					// Reseta o volume do pote
+                }
+
                 // Atualiza posições do pote e da barra
                 SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0,
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
-                SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), HWND_TOP, pos_x , pos_y + 10, 0, 0,
-                    SWP_NOSIZE | SWP_NOACTIVATE);
-                                
-                
+                SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), HWND_TOP, pos_x + 5, pos_y + 10, 0, 0,
+                    SWP_NOSIZE | SWP_SHOWWINDOW);
             }
             
         }
@@ -569,7 +554,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
         }
         //PASSA O SORVETE PRO POTE
-        if (IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED && poteAbaixoDoMixer==pos_x && volumecongelamento >= vazao)
+        if (IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED && poteAbaixoDoMixer && volumecongelamento >= vazao)
         {
             volumecongelamento -= vazao;
             volumepote += vazao;

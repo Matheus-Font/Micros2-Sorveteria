@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "WindowsProject.h"
 #include <CommCtrl.h> // Para usar controles comuns, como barras de progresso, botões, etc.
+#include "SimulatorProtocol.h"
 
 #define MAX_LOADSTRING 100
 
@@ -64,6 +65,14 @@ INT_PTR CALLBACK    MainDialogProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 
 
+/**
+ * @brief Função principal de entrada do aplicativo Windows.
+ * @param hInstance Instância atual do aplicativo.
+ * @param hPrevInstance Instância anterior do aplicativo (não utilizada).
+ * @param lpCmdLine Linha de comando.
+ * @param nCmdShow Parâmetro para exibição da janela.
+ * @return Código de saída do aplicativo.
+ */
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
@@ -108,11 +117,11 @@ fim:
 
 
 
-//
-//  FUNÇÃO: MyRegisterClass()
-//
-//  FINALIDADE: Registra a classe de janela.
-//
+/**
+ * @brief Registra a classe de janela principal.
+ * @param hInstance Instância do aplicativo.
+ * @return ATOM identificador da classe registrada.
+ */
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -139,16 +148,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
-//   FUNÇÃO: InitInstance(HINSTANCE, int)
-//
-//   FINALIDADE: Salva o identificador de instância e cria a janela principal
-//
-//   COMENTÁRIOS:
-//
-//        Nesta função, o identificador de instâncias é salvo em uma variável global e
-//        crie e exiba a janela do programa principal.
-//
+/**
+ * @brief Inicializa a instância do aplicativo e cria a janela principal.
+ * @param hInstance Instância do aplicativo.
+ * @param nCmdShow Parâmetro para exibição da janela.
+ * @return TRUE se a inicialização foi bem-sucedida, FALSE caso contrário.
+ */
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance;
@@ -165,17 +170,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 }
 
 
-//
-//  FUNÇÃO: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  FINALIDADE: Processa as mensagens para a janela principal.
-//
-//  WM_COMMAND  - processar o menu do aplicativo
-//  WM_PAINT    - Pintar a janela principal
-//  WM_DESTROY  - postar uma mensagem de saída e retornar
-//
-//
-// recursos.rc
+/**
+ * @brief Processa as mensagens da janela principal.
+ * @param hWnd Handle da janela.
+ * @param message Mensagem recebida.
+ * @param wParam Parâmetro adicional da mensagem.
+ * @param lParam Parâmetro adicional da mensagem.
+ * @return Resultado do processamento da mensagem.
+ */
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -213,6 +215,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+
+/**
+ * @brief Atualiza os valores de temperatura e pH na interface.
+ * @param hDlg Handle do diálogo principal.
+ */
 void AtualizaValorTempPh(HWND hDlg) {
     int valor = 0;
     HWND hProg = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
@@ -261,6 +268,10 @@ void AtualizaValorTempPh(HWND hDlg) {
     SetDlgItemInt(hDlg, IDC_TEMP, valor, FALSE);
 }
 
+/**
+ * @brief Atualiza os volumes dos tanques na interface.
+ * @param hDlg Handle do diálogo principal.
+ */
 void AtualizaVolumes(HWND hDlg) {
     WCHAR buffer[16];
 
@@ -283,6 +294,14 @@ void AtualizaVolumes(HWND hDlg) {
     SetDlgItemText(hDlg, IDC_VOLUMEPOTE, buffer);
 }
 
+/**
+ * @brief Procedimento do diálogo principal.
+ * @param hDlg Handle do diálogo.
+ * @param message Mensagem recebida.
+ * @param wParam Parâmetro adicional da mensagem.
+ * @param lParam Parâmetro adicional da mensagem.
+ * @return TRUE se a mensagem foi processada, FALSE caso contrário.
+ */
 void AtualizaPosicaoPote(HWND hDlg) {
    // HWND hPote = GetDlgItem(hDlg, IDC_POTE);
    
@@ -656,7 +675,15 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
     return FALSE;
 }
-//Dialog de About
+
+/**
+ * @brief Procedimento do diálogo "Sobre".
+ * @param hDlg Handle do diálogo.
+ * @param message Mensagem recebida.
+ * @param wParam Parâmetro adicional da mensagem.
+ * @param lParam Parâmetro adicional da mensagem.
+ * @return TRUE se a mensagem foi processada, FALSE caso contrário.
+ */
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -677,7 +704,14 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-//Janela de boas-vindas
+/**
+ * @brief Procedimento do diálogo de boas-vindas.
+ * @param hDlg Handle do diálogo.
+ * @param message Mensagem recebida.
+ * @param wParam Parâmetro adicional da mensagem.
+ * @param lParam Parâmetro adicional da mensagem.
+ * @return TRUE se a mensagem foi processada, FALSE caso contrário.
+ */
 INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_INITDIALOG: {

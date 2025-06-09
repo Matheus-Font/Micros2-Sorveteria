@@ -28,10 +28,10 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="SerialPort.h">
-      <Filter>Arquivos de Origem</Filter>
+      <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="SimulatorProtocol.h">
-      <Filter>Arquivos de Origem</Filter>
+      <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,16 @@
+#pragma once 
+
 #include "SerialPort.h"
 #include <iostream>
+#include <windows.h>
+#include <tchar.h>
+#include <initguid.h>
+#include <devguid.h>   // GUID_DEVCLASS_PORTS
+#include <setupapi.h>
+#include <vector>
+#include <string>
+
+#pragma comment(lib, "setupapi.lib")
 
 SerialPort::SerialPort(const std::string& portName)
     : hSerial(INVALID_HANDLE_VALUE), portName("\\\\.\\" + portName), connected(false) {
@@ -92,27 +103,32 @@ bool SerialPort::isConnected() const {
 }
 
 std::vector<std::string> SerialPort::listAvailablePorts() {
-    std::vector<std::string> availablePorts;
+    std::vector<std::string> ports;
 
-    for (int i = 1; i <= 255; ++i) {
-        std::string port = "\\\\.\\COM" + std::to_string(i);
+    HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVCLASS_PORTS, NULL, NULL, DIGCF_PRESENT);
+    if (hDevInfo == INVALID_HANDLE_VALUE) return ports;
 
-        HANDLE h = CreateFileA(
-            port.c_str(),
-            GENERIC_READ | GENERIC_WRITE,
-            0,
-            NULL,
-            OPEN_EXISTING,
-            0,
-            NULL
-        );
+    SP_DEVINFO_DATA devInfoData;
+    devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
 
-        if (h != INVALID_HANDLE_VALUE) {
-            // A porta está disponível
-            availablePorts.push_back("COM" + std::to_string(i));
-            CloseHandle(h);
+    for (DWORD i = 0; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData); ++i) {
+        char buffer[256];
+        if (SetupDiGetDeviceRegistryPropertyA(
+            hDevInfo, &devInfoData, SPDRP_FRIENDLYNAME,
+            NULL, (PBYTE)buffer, sizeof(buffer), NULL)) {
+
+            std::string name(buffer);
+
+            size_t start = name.find("COM");
+            if (start != std::string::npos) {
+                size_t end = name.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", start);
+                std::string comPort = name.substr(start, end - start);
+                ports.push_back(comPort);
+            }
         }
     }
 
-    return availablePorts;
+    SetupDiDestroyDeviceInfoList(hDevInfo);
+    return ports;
 }
+

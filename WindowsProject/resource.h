@@ -87,6 +87,7 @@
 #define IDC_CHECKMIXER                  1058
 #define IDC_CHECKCONGELADO              1059
 #define IDC_COMBO1                      1060
+#define IDC_COMBO_SERIAL                1060
 #define IDC_MIX1                        1061
 #define IDC_MIX2                        1062
 #define IDC_PROGRESS2                   1063

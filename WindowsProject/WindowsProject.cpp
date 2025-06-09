@@ -65,6 +65,9 @@ INT_PTR CALLBACK    MainDialogProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 
 
+// Objetos de classes internas ao projeto
+SimulatorProtocol simProto();
+
 /**
  * @brief Função principal de entrada do aplicativo Windows.
  * @param hInstance Instância atual do aplicativo.
@@ -704,6 +707,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+std::wstring to_wstring(const std::string& str) {
+    return std::wstring(str.begin(), str.end());
+}
+
 /**
  * @brief Procedimento do diálogo de boas-vindas.
  * @param hDlg Handle do diálogo.
@@ -713,23 +720,45 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
  * @return TRUE se a mensagem foi processada, FALSE caso contrário.
  */
 INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+
     switch (message) {
     case WM_INITDIALOG: {
-        //FORÇA O ICONE 
+
+        // Ícones
         SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
-        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICONE));
+
+        // Preenche a ComboBox com portas COM fictícias (ajuste conforme necessário)
+        HWND hCombo = GetDlgItem(hDlg, IDC_COMBO_SERIAL);
+
+        if (hCombo) {
+            std::vector<std::string> ports = SerialPort::listAvailablePorts();
+
+            for (std::string port: ports) {
+                std::wstring wport = to_wstring(port);
+                SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)wport.c_str());
+            }
+            SendMessage(hCombo, CB_SETCURSEL, 0, 0); // Seleciona o primeiro item por padrão
+        }
+
         return (INT_PTR)TRUE;
     }
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK) {
-            TCHAR serialW[100];
-            GetDlgItemText(hDlg, IDC_EDIT_SERIAL, serialW, 100);
 
-            if (wcslen(serialW) == 0) {
-                MessageBox(hDlg, L"Por favor, insira o número serial. Exemplo: COM1", L"Aviso", MB_OK | MB_ICONWARNING);
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDOK: {
+            HWND hCombo = GetDlgItem(hDlg, IDC_COMBO_SERIAL);
+            int selIndex = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0);
+
+            if (selIndex == CB_ERR) {
+                // Nenhuma seleção feita
+                MessageBox(hDlg, L"Por favor, selecione uma porta serial.", L"Aviso", MB_OK | MB_ICONWARNING);
                 return (INT_PTR)TRUE;
             }
+
+            // Obtém o texto selecionado
+            TCHAR serialW[100];
+            SendMessage(hCombo, CB_GETLBTEXT, selIndex, (LPARAM)serialW);
 
             // Converte TCHAR (Unicode) para char (ANSI)
             WideCharToMultiByte(CP_ACP, 0, serialW, -1, serialPort, sizeof(serialPort), NULL, NULL);
@@ -737,11 +766,14 @@ INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARA
             EndDialog(hDlg, IDOK);
             return (INT_PTR)TRUE;
         }
-        else if (LOWORD(wParam) == IDCANCEL) {
+
+        case IDCANCEL:
             EndDialog(hDlg, IDCANCEL);
             return (INT_PTR)TRUE;
         }
         break;
     }
+
     return (INT_PTR)FALSE;
 }
+

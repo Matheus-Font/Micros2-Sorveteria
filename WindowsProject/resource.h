@@ -33,6 +33,11 @@
 #define IDB_MIX1                        177
 #define IDB_BITMAP2                     178
 #define IDB_MIX2                        178
+#define IDB_SPLASH                      179
+#define IDB_GOTAS                       180
+#define IDB_LOGO                        181
+#define IDB_BITMAP1                     183
+#define IDB_WARNING                     183
 #define IDC_DESPERDICIO                 1001
 #define IDC_VOLUME                      1002
 #define IDC_SLIDER1                     1002
@@ -91,6 +96,9 @@
 #define IDC_MIX1                        1061
 #define IDC_MIX2                        1062
 #define IDC_PROGRESS2                   1063
+#define IDC_SPLASH                      1064
+#define IDC_CHECK2                      1067
+#define IDC_CHECKRESETVOLUMES           1068
 #define IDC_TEMPPHVALOR                 1104
 #define IDC_STATICTPH                   1106
 #define IDC_VOLUMEMIXER                 1200
@@ -118,6 +126,7 @@
 #define IDC_VALVULAOFFMIXER             1508
 #define IDC_VALVULAONCONGELADO          1509
 #define IDC_VALVULAOFFCONGELADO         1510
+#define IDC_WARNING                     1666
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -125,9 +134,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        179
+#define _APS_NEXT_RESOURCE_VALUE        184
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1064
+#define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

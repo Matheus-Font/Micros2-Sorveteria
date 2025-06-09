@@ -149,15 +149,18 @@
     <Image Include="..\CANOTESTE.bmp" />
     <Image Include="..\CANOTESTE2.bmp" />
     <Image Include="..\Esteira.bmp" />
+    <Image Include="..\GOTAS.bmp" />
     <Image Include="..\icone.ico" />
     <Image Include="..\icone.png" />
     <Image Include="..\icone_.ico" />
     <Image Include="..\icone_32x32.png" />
     <Image Include="..\icone_pequeno.ico" />
+    <Image Include="..\LOGO.bmp" />
     <Image Include="..\MIX1.bmp" />
     <Image Include="..\MIX2.bmp" />
     <Image Include="..\pote.bmp" />
     <Image Include="..\pote.png" />
+    <Image Include="..\SPLASH.bmp" />
     <Image Include="..\TANQUE.bmp" />
     <Image Include="..\tanquebase.bmp" />
     <Image Include="..\tanquebase.png" />
@@ -166,6 +169,7 @@
     <Image Include="..\VALVULAFECHADA.bmp" />
     <Image Include="..\valvula_cruz.bmp" />
     <Image Include="..\valvula_x.bmp" />
+    <Image Include="..\warning.bmp" />
     <Image Include="icon1.ico" />
     <Image Include="small.ico" />
     <Image Include="WindowsProject.ico" />

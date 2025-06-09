@@ -29,8 +29,10 @@ int ph3 = 5; // pH do tanque chocolate
 int temp1 = 30; // Temperatura do tanque creme
 int temp2 = 60; // Temperatura do tanque morango
 int temp3 = 80; // Temperatura do tanque chocolate
-int tempmixer = 70; // Temperatura inicial do mixer
-int tempcongelamento = 5; // Temperatura do congelamento 
+int tempmixer = 0; // Temperatura inicial do mixer
+int tempTargetMixer = -1; // ALVO PARA PRIMEIRA TEMPERATURA DO MIXER
+int tempTargetCongelamento = 0; // ALVO PARA PRIMEIRA TEMPERATURA DO CONGELAMENTO
+int tempcongelamento = 0; // Temperatura do congelamento 
 int tanqueSelecionado = 1; // Variável para armazenar o tanque selecionado (1, 2 ou 3)
 char serialPort[100] = "COM1"; // Porta serial padrão (pode ser alterada pelo usuário)
 
@@ -52,9 +54,8 @@ bool poteAbaixoDoMixer = false;
 
 static int pos_x = 340; // posição inicial X 
 static int pos_y = 592; // posição Y fixa 
-const int larguraPote = 46; // Largura do controle IDC_POTE em pixels
-const int larguraBarra = 30; // Largura da barra IDC_PROGRESSPOTE 
-int offsetX = (larguraPote - larguraBarra) / 2;
+static float pos_barra = 340.0f; // posição da barra de progresso do pote
+
 
 // Declarações de encaminhamento de funções incluídas nesse módulo de código:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -375,18 +376,13 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, volumecongelamento, 0); // se quiser mostrar o volume do mixer
         
         //POTE    
-        SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), NULL, pos_x, pos_y, 0, 0,
-        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
         // Inicializa o valor e o range da barra
-        SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETRANGE, 0, MAKELPARAM(0, 2.5)); // Volume de 0 a 5L
+        SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETRANGE, 0, MAKELPARAM(0, 2.5)); // Volume de 0 a 2.5L
         SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0);
 
 
         HWND hPote = GetDlgItem(hDlg, IDC_POTE);
         HWND hBarra = GetDlgItem(hDlg, IDC_PROGRESSPOTE);
-
-        SetWindowPos(hPote, HWND_BOTTOM, pos_x, pos_y, 0, 0,
-            SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);  // pote no fundo
 
         ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SWP_SHOWWINDOW);
 
@@ -412,37 +408,53 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 volumemixer -= vazao;
                 volumecongelamento += vazao;
 
-                HWND hProgCong = GetDlgItem(hDlg, IDC_PROGRESSCONGELAMENTO);
+				HWND hProgCong = GetDlgItem(hDlg, IDC_PROGRESSCONGELAMENTO); // Barra de progresso de congelamento ganha a cor do mixer
                 SendMessage(hProgCong, PBM_SETBARCOLOR, 0, (LPARAM)RGB((int)mixerR, (int)mixerG, (int)mixerB));
-
+               
                 // Atualiza visualmente
                 SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETPOS, (int)volumemixer, 0);
                 SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, (int)volumecongelamento, 0);
                 AtualizaVolumes(hDlg);
 
+                
                 if (volumecongelamento > 40.0f) volumecongelamento = 40.0f;
                 if (volumemixer < 0.0f) volumemixer = 0.0f;
                 
-                if (volumemixer <= 0.0f) {
+                if (volumemixer <= 0.01f) {
                     mixerR = mixerG = mixerB = 0;
                     targetR = targetG = targetB = 0;
                     primeiraCorMixer = true;
                     tempoCreme = tempoMorango = tempoChocolate = 0;
+                    tempmixer = 0;
+                    tempTargetMixer = -1;
+
+                    // Atualiza imediatamente o IDC_TPHMIXER e IDC_TEMP após zerar o mixer
+                    WCHAR buffer[16];
+                    if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED) {
+                        swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer); // 0 °C
+                        SetDlgItemInt(hDlg, IDC_TEMP, tempmixer, FALSE);
+                    }
+                    else {
+                        swprintf(buffer, 16, L"pH %d", phmixer); // phmixer pode ser 0
+                    }
+                    SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
+
                 }
 
             }
-
+            
             // Só move se o checkbox estiver marcado
             if (IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED)
             {
-                pos_x += 1; // Velocidade de movimento do pote (1 pixel por tick)
+                pos_x += 1; // Velocidade de movimento do pote 
+                pos_barra += 1.0f; // Velocidade de movimento da barra
 				pos_y = 592; 
               
                 // Verifica se pote está abaixo do mixer
                 if (pos_x >= 635 && pos_x <= 705)
                 {
                     poteAbaixoDoMixer = true; 
-                    EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE);
+                    //EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE);
                 }
                 else
                 {
@@ -450,24 +462,32 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 }
 
 				// Verifica se o pote passou do limite direito
-                if (pos_x > 1150) {
-                    pos_x = 340; // Reseta a posição do pote se passar do limite
-                    pos_y = 592; // Mantém a posição Y fixa
-                    ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_HIDE); // Esconde a barra de progresso do pote
-					EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE); // Desabilita o botão de esteira quando o pote volta ao início
-
-					// Reseta o volume do pote
+                if (pos_x > 1000) {
+                    pos_x = 340;
+                    pos_barra = 340.0f;
+                    pos_y = 592;
+					volumepote = 0; // Reseta o volume do pote
+					SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0); //Reseta a barra do pote
+					AtualizaVolumes(hDlg); // Atualiza os volumes do pote na interface
+					ShowWindow(GetDlgItem(hDlg, IDC_SPLASH), SW_HIDE); // Esconde o splash quando o pote é resetado
                 }
+
 
                 // Atualiza posições do pote e da barra
                 SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0,
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
-                SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), HWND_TOP, pos_x + 5, pos_y + 10, 0, 0,
+                SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), HWND_TOP, (int)(pos_barra + 5), pos_y + 10, 0, 0,
                     SWP_NOSIZE | SWP_SHOWWINDOW);
+
             }
             
         }
+        // Verifica nível baixo de qualquer tanque
+        bool alertaBaixo = (volumecreme <= 5.0f || volumemorango <= 5.0f || volumechocolate <= 5.0f);
+
+        // Mostra ou esconde o aviso
+        ShowWindow(GetDlgItem(hDlg, IDC_WARNING), alertaBaixo ? SW_SHOW : SW_HIDE);
         auto setCorAlvo = [&](int r, int g, int b) {
             if (primeiraCorMixer) {
                 mixerR = r;
@@ -564,13 +584,92 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             if (volumepote > 2.5f) volumepote = 2.5f;
             if (volumecongelamento < 0.0f) volumecongelamento = 0.0f;
 
-            // Atualiza visualmente a barra do congelamento e o volume do pote
-            SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, (int)volumecongelamento, 0);
-            AtualizaVolumes(hDlg);
+            // Atualiza visualmente as barras
+			SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, (int)volumecongelamento, 0); // Atualiza a barra de congelamento visualmente
+			SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0); // Atualiza a barra do pote visualmente
+			AtualizaVolumes(hDlg); // Atualiza numericamente os volumes do pote na interface
+            
+            HWND hProgPote = GetDlgItem(hDlg, IDC_PROGRESSPOTE); // Barra de progresso do pote ganha a cor do mixer = congelamento
+            SendMessage(hProgPote, PBM_SETBARCOLOR, 0, (LPARAM)RGB((int)mixerR, (int)mixerG, (int)mixerB));
+
+            if (volumepote >= 2.5f) {
+                // Esconde a barra de progresso do pote
+                ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_HIDE);
+                // Mostra o splash
+                ShowWindow(GetDlgItem(hDlg, IDC_SPLASH), SW_SHOW);
+            }
+            else {
+                // Mostra a barra de progresso se o volume estiver abaixo do limite
+                ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SW_SHOW);
+                // Esconde o splash
+                ShowWindow(GetDlgItem(hDlg, IDC_SPLASH), SW_HIDE);
+            }
 
         }
 		//ANIMAÇÃO DO MIXER
         tempoAnimacaoMix += 10;
+
+        // Controle gradual da temperatura do mixer
+        static int delayTemp = 0;
+        delayTemp++;
+        if (delayTemp >= 10) {
+            delayTemp = 0;
+
+            // Só atualiza temperatura se algum botão de creme, morango ou chocolate estiver marcado
+            if (
+                IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED ||
+                IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED ||
+                IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED
+                ) {
+                if (tempTargetMixer != -1 && tempmixer != tempTargetMixer) {
+                    if (tempmixer < tempTargetMixer)
+                        tempmixer += 1;
+                    else if (tempmixer > tempTargetMixer)
+                        tempmixer -= 1;
+                }
+            }
+
+            HWND hProgTemp = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
+            SendMessage(hProgTemp, PBM_SETPOS, tempcongelamento, 0);
+        }
+
+        
+        // Controle gradual da temperatura do congelamento
+        static int delayTempCong = 0;
+        delayTempCong++;
+        if (delayTempCong >= 10) {
+            delayTempCong = 0;
+
+            if (tempcongelamento != tempTargetCongelamento) {
+                if (tempcongelamento < tempTargetCongelamento)
+                    tempcongelamento += 1;
+                else if (tempcongelamento > tempTargetCongelamento)
+                    tempcongelamento -= 1;
+                if (tempTargetCongelamento < 5)
+                    tempTargetCongelamento = 5;
+
+                // Atualiza label
+                WCHAR buffer[16];
+                swprintf(buffer, 16, L"%d(\x00B0\C)", tempcongelamento);
+                SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
+            }
+        }
+
+        
+        // Atualiza texto do TPHMIXER independentemente do modo
+        WCHAR buffer[16];
+        if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED)
+            swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
+        else
+            swprintf(buffer, 16, L"pH %d", phmixer);
+        SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
+
+        // Atualiza campo lateral da barra (se for temperatura)
+        if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED)
+            SetDlgItemInt(hDlg, IDC_TEMP, tempcongelamento, FALSE);
+
+
+		// Controle de animação do mixer (HÉLICE)
         if (tempoAnimacaoMix >= 100 &&
             (IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED ||
                 IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED ||
@@ -606,9 +705,12 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         case IDC_CHECKCREME:
         {
             BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED;
-
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCREME), checked ? SW_SHOW : SW_HIDE);
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCREME), checked ? SW_HIDE : SW_SHOW);
+            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
+                tempmixer = temp1; // aplica direto
+            }
+            tempTargetMixer = temp1;
         }
         break;
         case IDC_CHECKMORANGO:
@@ -617,6 +719,10 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMORANGO), checked ? SW_SHOW : SW_HIDE);
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMORANGO), checked ? SW_HIDE : SW_SHOW);
+            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
+                tempmixer = temp2; // aplica direto
+            }
+            tempTargetMixer = temp2;
         }
         break;
         case IDC_CHECKCHOCOLATE:
@@ -624,6 +730,10 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED;
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCHOCOLATE), checked ? SW_SHOW : SW_HIDE);
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCHOCOLATE), checked ? SW_HIDE : SW_SHOW);
+            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
+                tempmixer = temp3; // aplica direto
+            }
+            tempTargetMixer = temp3;
 		}
 		break;
         case IDC_CHECKMIXER:
@@ -631,6 +741,19 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED;
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMIXER), checked ? SW_SHOW : SW_HIDE);
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMIXER), checked ? SW_HIDE : SW_SHOW);
+
+            if (checked) {
+                // Atualiza imediatamente a temperatura e a interface
+                tempcongelamento = tempmixer;
+                tempTargetCongelamento = tempmixer;
+
+                WCHAR buffer[16];
+                swprintf(buffer, 16, L"%d(\x00B0\C)", tempcongelamento);
+                SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
+            }
+            else {
+                tempTargetCongelamento = 5; // mínimo de 5 graus
+            }
         }
         break;
         case IDC_CHECKCONGELADO:
@@ -640,6 +763,28 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCONGELADO), checked ? SW_HIDE : SW_SHOW);
         }
         break;
+        case IDC_CHECKRESETVOLUMES:
+        {
+            if (IsDlgButtonChecked(hDlg, IDC_CHECKRESETVOLUMES) == BST_CHECKED)
+            {
+                volumecreme = 30.0f;
+                volumemorango = 30.0f;
+                volumechocolate = 30.0f;
+
+                // Atualiza as barras de progresso
+                SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, (int)volumecreme, 0);
+                SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, (int)volumemorango, 0);
+                SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, (int)volumechocolate, 0);
+
+                // Atualiza os valores numéricos
+                AtualizaVolumes(hDlg);
+
+                // Desmarca automaticamente o checkbox após o reset (opcional)
+                CheckDlgButton(hDlg, IDC_CHECKRESETVOLUMES, BST_UNCHECKED);
+            }
+        }
+        break;
+
         case IDC_TROCARSERIAL:
             strcpy_s(serialPort, sizeof(serialPort), "COM1");
             MessageBoxA(hDlg, serialPort, "Serial resetada para", MB_OK | MB_ICONINFORMATION);

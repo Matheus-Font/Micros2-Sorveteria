@@ -28,10 +28,10 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
     <ClInclude Include="SerialPort.h">
-      <Filter>Arquivos de Cabeçalho</Filter>
+      <Filter>Arquivos de Origem</Filter>
     </ClInclude>
     <ClInclude Include="SimulatorProtocol.h">
-      <Filter>Arquivos de Cabeçalho</Filter>
+      <Filter>Arquivos de Origem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -124,6 +124,18 @@
       <Filter>Arquivos de Recurso</Filter>
     </Image>
     <Image Include="..\MIX2.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\SPLASH.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\GOTAS.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\LOGO.bmp">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="..\warning.bmp">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
   </ItemGroup>

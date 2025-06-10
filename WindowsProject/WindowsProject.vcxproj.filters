@@ -33,6 +33,12 @@
     <ClInclude Include="SimulatorProtocol.h">
       <Filter>Arquivos de Origem</Filter>
     </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Arquivos de Origem</Filter>
+    </ClInclude>
+    <ClInclude Include="Atualiza.h">
+      <Filter>Arquivos de Origem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WindowsProject.cpp">
@@ -42,6 +48,12 @@
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
     <ClCompile Include="SimulatorProtocol.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="Atualiza.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>

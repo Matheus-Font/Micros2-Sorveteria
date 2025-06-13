@@ -30,6 +30,11 @@ bool SerialPort::open() {
         0,
         NULL
     );
+    //===============================================================================================
+    char msg[100];
+    sprintf_s(msg, "Tentando abrir: %s\n", portName.c_str());
+    OutputDebugStringA(msg);
+    //===============================================================================================
 
     if (hSerial == INVALID_HANDLE_VALUE) {
         std::cerr << "Erro ao abrir porta " << portName << "\n";
@@ -50,6 +55,7 @@ void SerialPort::close() {
     }
 }
 
+//===============================================================================================
 bool SerialPort::configurePort() {
     DCB dcb = { 0 };
     dcb.DCBlength = sizeof(dcb);
@@ -63,40 +69,55 @@ bool SerialPort::configurePort() {
     dcb.ByteSize = 8;
     dcb.StopBits = ONESTOPBIT;
     dcb.Parity = NOPARITY;
-
-    if (!SetCommState(hSerial, &dcb)) {
+    
+     if (!SetCommState(hSerial, &dcb)) {
         std::cerr << "Erro ao configurar DCB.\n";
         return false;
     }
 
     return true;
 }
+//===============================================================================================
 
+//===============================================================================================
 void SerialPort::configureTimeouts() {
     COMMTIMEOUTS timeouts = { 0 };
-    timeouts.ReadIntervalTimeout = 50;
-    timeouts.ReadTotalTimeoutConstant = 50;
+    timeouts.ReadIntervalTimeout = 20;
+    timeouts.ReadTotalTimeoutConstant = 100;
     timeouts.ReadTotalTimeoutMultiplier = 10;
-    timeouts.WriteTotalTimeoutConstant = 50;
-    timeouts.WriteTotalTimeoutMultiplier = 10;
     SetCommTimeouts(hSerial, &timeouts);
 }
+//===============================================================================================
 
+//===============================================================================================
 bool SerialPort::write(const std::string& data) {
-    DWORD bytesSent;
-    return WriteFile(hSerial, data.c_str(), data.length(), &bytesSent, NULL);
+    DWORD bytesSent = 0;
+    BOOL result = WriteFile(hSerial, data.c_str(), data.length(), &bytesSent, NULL);
+
+    char msg[128];
+    sprintf_s(msg, "[DEBUG] Enviando %zu bytes: '%s' ? resultado: %d, enviados: %lu\n",
+        data.length(), data.c_str(), result, bytesSent);
+    OutputDebugStringA(msg);
+
+    return (result && bytesSent == data.length());
 }
+//===============================================================================================
 
+//===============================================================================================
 std::string SerialPort::read(size_t numBytes) {
-    char* buffer = new char[numBytes + 1];
-    DWORD bytesRead;
-    ReadFile(hSerial, buffer, numBytes, &bytesRead, NULL);
-    buffer[bytesRead] = '\0';
+    std::string result;
+    char buffer[1];
+    DWORD bytesRead = 0;
 
-    std::string result(buffer);
-    delete[] buffer;
+    while (result.size() < numBytes) {
+        if (!ReadFile(hSerial, buffer, 1, &bytesRead, NULL) || bytesRead == 0)
+            break;
+        result += buffer[0];
+    }
+
     return result;
 }
+//===============================================================================================
 
 bool SerialPort::isConnected() const {
     return connected;

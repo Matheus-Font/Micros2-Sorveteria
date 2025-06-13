@@ -7,6 +7,11 @@
 #include <CommCtrl.h> // Para usar controles comuns, como barras de progresso, botões, etc.
 #include "SimulatorProtocol.h" // Inclui o protocolo de simulação para comunicação com o Arduino
 
+//===============================================================================================
+SerialPort* g_serial = nullptr;
+SimulatorProtocol* g_protocolo = nullptr;
+//===============================================================================================
+
 #define MAX_LOADSTRING 100
 
 #include "SerialPort.h" // Inclui a classe SerialPort para comunicação serial
@@ -24,12 +29,6 @@ typedef struct Entradas {
     bool esteira = false;
     bool selecao = false;
     uint16_t temperaturaControle = 512; // valor analógico (0–1023)
-};
-
-// Saídas lidas do Arduino
-typedef struct Saidas {
-    bool nivel1, nivel2, nivel3, nivelSaida, poteEsteira;
-    uint16_t temperatura, ph;
 };
 
 std::atomic<bool> executando(true);
@@ -90,11 +89,36 @@ INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 
 
 // Objetos de classes internas ao projeto
-SimulatorProtocol simProto();
+// SimulatorProtocol* simProto = nullptr;
+
+//===============================================================================================
+void TestaComandoPR() {
+    if (!g_protocolo) {
+        OutputDebugStringA("❌ g_protocolo não está inicializado!\n");
+        return;
+    }
+
+    uint8_t digital;
+    std::vector<uint16_t> analog;
+
+    if (g_protocolo->readData(digital, analog, 0)) {
+        char msg[64];
+        sprintf_s(msg, "[TESTE PR] digitalIn = 0x%02X\n", digital);
+        OutputDebugStringA(msg);
+    }
+    else {
+        OutputDebugStringA("[TESTE PR] Falha na leitura da serial (readData)\n");
+    }
+}
+//===============================================================================================
+
 
 void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
     SimulatorProtocol protocolo(serial);
 
+    // TESTE MANUAL APÓS INICIAR A SERIAL
+    
+    //===============================================================================================
     while (executando.load()) {
         // 1. Montar bits digitais
         uint16_t bits = 0;
@@ -118,17 +142,31 @@ void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
             saidas.nivel2 = digitalIn & (1 << 1);
             saidas.nivel3 = digitalIn & (1 << 2);
             saidas.nivelSaida = digitalIn & (1 << 3);
-            saidas.poteEsteira = digitalIn & (1 << 4);
+            saidas.poteEsteira = digitalIn & (1 << 5); // Bit 5 = pino 13
 
             if (analogIn.size() >= 2) {
                 saidas.temperatura = analogIn[0];
                 saidas.ph = analogIn[1];
             }
+
+            // DEBUG: imprime todos os bits recebidos
+            char debug[100];
+            sprintf_s(debug, sizeof(debug), "digitalIn: %02X (bin: %d%d%d%d%d%d)", digitalIn,
+                (digitalIn & 0x20) ? 1 : 0,
+                (digitalIn & 0x10) ? 1 : 0,
+                (digitalIn & 0x08) ? 1 : 0,
+                (digitalIn & 0x04) ? 1 : 0,
+                (digitalIn & 0x02) ? 1 : 0,
+                (digitalIn & 0x01) ? 1 : 0);
+
+            OutputDebugStringA(debug);
+            OutputDebugStringA("\n");
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-}
+ } //===============================================================================================
+
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
@@ -164,8 +202,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
                 break; // volta à tela de boas-vindas
         }
     }
-
-
+    
 fim:
     return 0;
 }
@@ -293,16 +330,26 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 		ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SWP_SHOWWINDOW); // Mostra a barra de progresso do pote
 
-        SerialPort port(serialPort);
+     
+        //=================================
 
-        if (port.open()) {
+        g_serial = new SerialPort(serialPort);
+        if (g_serial->open()) {
+            OutputDebugStringA("✅ Porta aberta com sucesso!\n");
+
+            g_protocolo = new SimulatorProtocol(*g_serial);
             executando = true;
-            serialThread = std::thread(loopAtualizacao, std::ref(port), std::ref(entradas), std::ref(saidas));
+            serialThread = std::thread(loopAtualizacao, std::ref(*g_serial), std::ref(entradas), std::ref(saidas));
         }
         else {
-            MessageBox(hDlg, L"Erro ao abrir a porta serial.", L"Erro", MB_OK | MB_ICONERROR);
+            OutputDebugStringA("❌ Erro ao abrir porta serial.\n");
         }
 
+        //=================================
+
+
+
+      
 
         SetTimer(hDlg, 1, 10, NULL); // Timer com ID 1 e intervalo de 10ms
 		AtualizaVolumes(hDlg);  // Atualiza os volumes iniciais na interface
@@ -422,6 +469,13 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         DestroyWindow(hDlg);
         break;
     case WM_DESTROY:
+        executando = false;
+        if (serialThread.joinable()) serialThread.join();
+
+        delete g_protocolo;
+        delete g_serial;
+
+
         PostQuitMessage(0);
         break;
     }

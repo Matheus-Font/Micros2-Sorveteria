@@ -7,6 +7,7 @@
 #include "WindowsProject.h"
 #include <cwchar>  // Para usar swprintf com wchar_t
 
+extern Saidas saidas;
 
 // Declare externs se as variáveis estão no main.cpp
 extern float volumemixer, volumecongelamento, volumecreme, volumemorango, volumechocolate, volumepote;
@@ -72,43 +73,40 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // Função chamada pe
                 }
 
             }
-
-            // Só move se o checkbox estiver marcado
-            if (IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED)
+            //===============================================================================================
+            if (saidas.poteEsteira) // Se D13 está em nível alto, move...
             {
-                pos_x += 1; // Velocidade de movimento do pote 
-                pos_barra += 1.0f; // Velocidade de movimento da barra
-             
-                // Verifica se pote está abaixo do mixer
-                if (pos_x >= 635 && pos_x <= 705)
-                {
-                    poteAbaixoDoMixer = true;
-                    //EnableWindow(GetDlgItem(hDlg, IDC_ESTEIRAON), TRUE);
-                }
-                else
-                {
-                    poteAbaixoDoMixer = false;
-                }
+                OutputDebugStringA("? ESTEIRA ATIVADA VIA PINO D13\n");
+                //===============================================================================================
+                pos_x += 1;
+                pos_barra += 1.0f;
 
-                // Verifica se o pote passou do limite da tela
+                if (pos_x >= 635 && pos_x <= 705)
+                    poteAbaixoDoMixer = true;
+                else
+                    poteAbaixoDoMixer = false;
+
                 if (pos_x > 1000) {
                     pos_x = 340;
                     pos_barra = 340.0f;
-                    volumepote = 0; // Reseta o volume do pote
-                    SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0); //Reseta a barra do pote
-                    AtualizaVolumes(hDlg); // Atualiza os volumes do pote na interface
-                    ShowWindow(GetDlgItem(hDlg, IDC_SPLASH), SW_HIDE); // Esconde o splash quando o pote é resetado
+                    volumepote = 0;
+                    SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0);
+                    AtualizaVolumes(hDlg);
+                    ShowWindow(GetDlgItem(hDlg, IDC_SPLASH), SW_HIDE);
                 }
 
-
-                // Atualiza posições do pote e da barra
                 SetWindowPos(GetDlgItem(hDlg, IDC_POTE), NULL, pos_x, pos_y, 0, 0,
                     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
                 SetWindowPos(GetDlgItem(hDlg, IDC_PROGRESSPOTE), HWND_TOP, (int)(pos_barra + 5), pos_y + 10, 0, 0,
                     SWP_NOSIZE | SWP_SHOWWINDOW);
-
             }
+            else {
+                // ESTEIRA PARADA
+                poteAbaixoDoMixer = false;
+            }
+
+
 
         }
         // Verifica nível baixo de qualquer tanque

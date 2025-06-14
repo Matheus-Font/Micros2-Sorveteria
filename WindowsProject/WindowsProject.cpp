@@ -46,7 +46,7 @@ float volumechocolate = 30;
 float volumemorango = 30;
 float volumecongelamento = 0;
 float volumepote = 0;
-int phmixer = 0; // pH do mixer (inicialmente indefinido, pode ser ajustado depois)
+float phmixer = 0.0f;
 int ph1 = 7; // pH do tanque creme
 int ph2 = 13; // pH do tanque morango
 int ph3 = 5; // pH do tanque chocolate
@@ -55,6 +55,7 @@ int temp2 = 60; // Temperatura do tanque morango
 int temp3 = 80; // Temperatura do tanque chocolate
 int tempmixer = 0; // Temperatura inicial do mixer
 int tempTargetMixer = -1; // ALVO PARA PRIMEIRA TEMPERATURA DO MIXER
+float phTargetMixer = -1.0f;
 int tempTargetCongelamento = 0; // ALVO PARA PRIMEIRA TEMPERATURA DO CONGELAMENTO
 int tempcongelamento = 0; // Temperatura do congelamento 
 int tanqueSelecionado = 1; // Variável para armazenar o tanque selecionado (1, 2 ou 3)
@@ -144,10 +145,17 @@ void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
             saidas.poteEsteira = digitalIn & (1 << 4); // Bit 4 = pino 12
 			saidas.encherpote = digitalIn & (1 << 5); // Bit 5 = pino 13
 
-            if (analogIn.size() >= 2) {
-                saidas.temperatura = analogIn[0];
-                saidas.ph = analogIn[1];
+            if (analogIn.size() >= 6) {
+                // Atualiza os volumes com os valores lidos da serial (convertendo de 0–1023 para litros)
+                volumecreme = analogIn[0] * 0.04f;
+                volumemorango = analogIn[1] * 0.04f;
+                volumechocolate = analogIn[2] * 0.04f;
+                volumecongelamento = analogIn[3] * 0.04f;
+
+                saidas.temperatura = analogIn[4];
+                saidas.ph = analogIn[5];
             }
+
 
             // DEBUG: imprime todos os bits recebidos
             char debug[100];

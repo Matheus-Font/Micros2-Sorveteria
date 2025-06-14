@@ -1,4 +1,4 @@
-
+Ôªø
 #include "Atualiza.h"
 #include "Timer.h"
 #include <windows.h>
@@ -9,26 +9,27 @@
 
 extern Saidas saidas;
 
-// Declare externs se as vari·veis est„o no main.cpp
+// Declare externs se as vari√°veis est√£o no main.cpp
 extern float volumemixer, volumecongelamento, volumecreme, volumemorango, volumechocolate, volumepote;
 extern int tempoCreme, tempoMorango, tempoChocolate;
 extern float mixerR, mixerG, mixerB, targetR, targetG, targetB, congeladoR, congeladoG, congeladoB;
 extern bool primeiraCorMixer, poteAbaixoDoMixer, mostrarMix1;
-extern int tempmixer, tempTargetMixer, tempcongelamento, tempTargetCongelamento, phmixer;
+extern int tempmixer, tempTargetMixer, tempcongelamento, tempTargetCongelamento;
+extern float phmixer, phTargetMixer;
 const int R_CREME = 255, G_CREME = 255, B_CREME = 100;
 const int R_MORANGO = 255, G_MORANGO = 80, B_MORANGO = 80;
 const int R_CHOCOLATE = 123, G_CHOCOLATE = 63, B_CHOCOLATE = 0;
-extern int temp1, temp2, temp3; // Temperaturas para creme, morango e chocolate
+extern int temp1, temp2, temp3, ph1, ph2, ph3; // Temperaturas e ph's para creme, morango e chocolate
 
-static int pos_x = 340; // posiÁ„o inicial X 
-static int pos_y = 592; // posiÁ„o Y fixa 
-static float pos_barra = 340.0f; // posiÁ„o da barra de progresso do pote
+static int pos_x = 340; // posi√ß√£o inicial X 
+static int pos_y = 592; // posi√ß√£o Y fixa 
+static float pos_barra = 340.0f; // posi√ß√£o da barra de progresso do pote
 UINT tempoAnimacaoMix = 0;
-float vazao = 0.02f; // vaz„o em litros 0.2L/s // 0.002f= 2mL/s (2mL por segundo)
+float vazao = 0.02f; // vaz√£o em litros 0.2L/s // 0.002f= 2mL/s (2mL por segundo)
 
 
 
-void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pelo timer
+void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // Fun√ß√£o chamada pelo timer
     if (wParam == 1) {
         {
             if (pos_x >= 635 && pos_x <= 705)
@@ -37,9 +38,9 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
                 poteAbaixoDoMixer = false;
 
 
-            // Transfere conte˙do do mixer para congelamento
-			if ((IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED || saidas.nivelSaida) && volumemixer >= vazao) { // Verifica se o mixer est· ativo e se h· volume suficiente
-                // Se for via sinal digital (saidas.nivelSaida) e temperatura ainda n„o foi sincronizada
+            // Transfere conte√∫do do mixer para congelamento
+			if ((IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED || saidas.nivelSaida) && volumemixer >= vazao) { // Verifica se o mixer est√° ativo e se h√° volume suficiente
+                // Se for via sinal digital (saidas.nivelSaida) e temperatura ainda n√£o foi sincronizada
                 static bool sincronizouTemp = false;
                 if (saidas.nivelSaida && !sincronizouTemp) {
                     tempcongelamento = tempmixer;
@@ -55,7 +56,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
                     sincronizouTemp = true;
                 }
                 else if (!saidas.nivelSaida) {
-                    sincronizouTemp = false; // Reseta para permitir nova sincronizaÁ„o na prÛxima ativaÁ„o
+                    sincronizouTemp = false; // Reseta para permitir nova sincroniza√ß√£o na pr√≥xima ativa√ß√£o
                 }
 
                 // Atualiza numericamente os volumes
@@ -75,35 +76,37 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
                 SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, (int)volumecongelamento, 0);
                 AtualizaVolumes(hDlg);
 
-				// Limita os volumes para n„o ultrapassar os m·ximos
+				// Limita os volumes para n√£o ultrapassar os m√°ximos
                 if (volumecongelamento > 40.0f) volumecongelamento = 40.0f;
                 if (volumemixer < 0.0f) volumemixer = 0.0f;
 
 
-				if (volumemixer <= 0.01f) { // Se o volume do mixer for muito baixo, reseta as cores e tempos
+                if (volumemixer <= 0.01f) {
                     mixerR = mixerG = mixerB = 0;
                     targetR = targetG = targetB = 0;
                     primeiraCorMixer = true;
                     tempoCreme = tempoMorango = tempoChocolate = 0;
                     tempmixer = 0;
-					phmixer = 0;    
+                    phmixer = 0;
                     tempTargetMixer = -1;
+                    phTargetMixer = -1;  
 
-                    // Atualiza imediatamente o Valor numÈrico apÛs zerar o mixer
+
+                    sincronizouTemp = false; 
+
+                    // Atualiza imediatamente o Valor num√©rico ap√≥s zerar o mixer
                     WCHAR buffer[16];
-                    if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED) {
-                        swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer); // 0 ∞C
-                    }
-                    else {
-                        swprintf(buffer, 16, L"pH %d", phmixer); // phmixer 0
-                    }
+                    if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED)
+                        swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
+                    else
+                        swprintf(buffer, 16, L"pH %.1f", phmixer);
                     SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
-
                 }
+
 
             }
             //===============================================================================================
-            if (saidas.poteEsteira || IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED) // Se D13 est· em nÌvel alto, move...
+            if (saidas.poteEsteira || IsDlgButtonChecked(hDlg, IDC_ESTEIRAON) == BST_CHECKED) // Se D13 est√° em n√≠vel alto, move...
             {
                 OutputDebugStringA("? ESTEIRA ATIVADA VIA PINO D13\n");
                 //===============================================================================================
@@ -144,13 +147,13 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
 
 
         }
-        // Verifica nÌvel baixo de qualquer tanque
+        // Verifica n√≠vel baixo de qualquer tanque
         bool alertaBaixo = (volumecreme <= 5.0f || volumemorango <= 5.0f || volumechocolate <= 5.0f);
 
         // Mostra ou esconde o aviso
         ShowWindow(GetDlgItem(hDlg, IDC_WARNING), alertaBaixo ? SW_SHOW : SW_HIDE);
 
-        // FunÁ„o para definir a cor alvo do mixer
+        // Fun√ß√£o para definir a cor alvo do mixer
 		auto setCorAlvo = [&](int r, int g, int b) { 
             if (primeiraCorMixer) {
                 mixerR = r;
@@ -172,6 +175,10 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             setCorAlvo(R_CREME, G_CREME, B_CREME);
             tempmixer = temp1;
             tempTargetMixer = temp1;
+            if (phTargetMixer < 0.0f && volumemixer == 0.0f) {
+                phmixer = (float)ph1; // primeira vez: seta direto
+            }
+            phTargetMixer = (float)ph1; // sempre atualiza alvo
             WCHAR buffer[16];
             swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
             SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
@@ -184,6 +191,10 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             setCorAlvo(R_MORANGO, G_MORANGO, B_MORANGO);
             tempmixer = temp2;
             tempTargetMixer = temp2;
+            if (phTargetMixer < 0.0f && volumemixer == 0.0f) {
+                phmixer = (float)ph2;
+            }
+            phTargetMixer = (float)ph2;
             WCHAR buffer[16];
             swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
             SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
@@ -196,6 +207,10 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             setCorAlvo(R_CHOCOLATE, G_CHOCOLATE, B_CHOCOLATE);
             tempmixer = temp3;
             tempTargetMixer = temp3;
+            if (phTargetMixer < 0.0f && volumemixer == 0.0f) {
+                phmixer = (float)ph3;
+            }
+            phTargetMixer = (float)ph3;
             WCHAR buffer[16];
             swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
             SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
@@ -204,7 +219,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
 
 
 
-        // Limita valores para n„o ultrapassar os m·ximos
+        // Limita valores para n√£o ultrapassar os m√°ximos
         if (volumemixer > 70.0f) volumemixer = 70.0f;
         if (volumecreme < 0.0f) volumecreme = 0.0f;
         if (volumemorango < 0.0f) volumemorango = 0.0f;
@@ -218,7 +233,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, (int)volumechocolate, 0);
             SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETPOS, (int)volumemixer, 0);
 
-			// MUDAN«A DE COR DO MIXER
+			// MUDAN√áA DE COR DO MIXER
             float passoRGB = 0.1f; // velocidade de mudanca de cor
             auto transicao = [&](float& atual, float alvo) {
                 if (atual < alvo)
@@ -241,6 +256,8 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
                 targetR = targetG = targetB = 0;
                 primeiraCorMixer = true;
                 tempoCreme = tempoMorango = tempoChocolate = 0;
+                phmixer = 0;
+                phTargetMixer = -1;
             }
 
         }
@@ -279,7 +296,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
 
         }
 
-        //ANIMA«√O DO MIXER
+        //ANIMA√á√ÉO DO MIXER
         tempoAnimacaoMix += 10;
 
         // Controle gradual da temperatura do mixer
@@ -288,7 +305,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
         if (delayTemp >= 10) {
             delayTemp = 0;
 
-            // SÛ atualiza temperatura se algum bot„o de creme, morango ou chocolate estiver marcado
+            // S√≥ atualiza temperatura se algum bot√£o de creme, morango ou chocolate estiver marcado
             if (IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED ||
                 IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED ||
                 IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED || 
@@ -308,11 +325,11 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
 
 
         // Controle gradual da temperatura do congelamento
-        // Detecta transiÁ„o da saÌda do mixer (nivelSaida)
+        // Detecta transi√ß√£o da sa√≠da do mixer (nivelSaida)
         static bool saidaAnterior = false;
 
         if (saidaAnterior && !saidas.nivelSaida) {
-            // Quando a v·lvula de saÌda foi fechada (transiÁ„o HIGH ? LOW)
+            // Quando a v√°lvula de sa√≠da foi fechada (transi√ß√£o HIGH ‚Üí LOW)
             tempTargetCongelamento = -25;
         }
 
@@ -338,13 +355,22 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             }
         }
 
+        if (volumemixer > 0.0f && phTargetMixer >= 0.0f) {
+            float passoPH = 0.05f;
+
+            if (phmixer < phTargetMixer)
+                phmixer = min(phTargetMixer, phmixer + passoPH);
+            else if (phmixer > phTargetMixer)
+                phmixer = max(phTargetMixer, phmixer - passoPH);
+        }
+
 
         // Atualiza texto do TPHMIXER independentemente do modo
         WCHAR buffer[16];
         if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED)
             swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
         else
-            swprintf(buffer, 16, L"pH %d", phmixer);
+            swprintf(buffer, 16, L"pH %.1f", phmixer);
         SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
 
         // Atualiza campo lateral da barra (se for temperatura)
@@ -352,7 +378,7 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             SetDlgItemInt(hDlg, IDC_TEMP, tempcongelamento, FALSE);
 
 
-        // Controle de animaÁ„o do mixer (H…LICE)
+        // Controle de anima√ß√£o do mixer (H√âLICE)
         if (tempoAnimacaoMix >= 100 &&
             (IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED ||
                 IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED ||
@@ -371,13 +397,13 @@ void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam) { // FunÁ„o chamada pe
             IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) != BST_CHECKED &&
             saidas.nivel1 && saidas.nivel2 && saidas.nivel3)
         {
-            // Nenhum bot„o pressionado: desliga as imagens
+            // Nenhum bot√£o pressionado: desliga as imagens
             ShowWindow(GetDlgItem(hDlg, IDC_MIX1), SW_HIDE);
             ShowWindow(GetDlgItem(hDlg, IDC_MIX2), SW_HIDE);
             tempoAnimacaoMix = 0;
         }
 
-        // Atualiza visualmente as v·lvulas com base nos sinais recebidos
+        // Atualiza visualmente as v√°lvulas com base nos sinais recebidos
         ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCREME), (saidas.nivel1 || IsDlgButtonChecked(hDlg, IDC_CHECKCREME)) ? SW_SHOW : SW_HIDE);
         ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCREME), (saidas.nivel1 || IsDlgButtonChecked(hDlg, IDC_CHECKCREME)) ? SW_HIDE : SW_SHOW);
 

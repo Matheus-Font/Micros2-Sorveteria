@@ -8,8 +8,8 @@
 // Variáveis globais usadas nas atualizações (vindas de outro .cpp)
 extern int temp1, temp2, temp3;
 extern int tempmixer, tempcongelamento;
-extern int ph1, ph2, ph3, phmixer;
-extern float volumecreme, volumemorango, volumechocolate;
+extern int ph1, ph2, ph3;
+extern float volumecreme, volumemorango, volumechocolate, phmixer;
 extern float volumemixer, volumecongelamento, volumepote;
 
 

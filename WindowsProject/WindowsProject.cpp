@@ -63,9 +63,8 @@ char serialPort[100] = "COM1"; // Porta serial padrão (pode ser alterada pelo u
 int tempoCreme = 0; // Tempos para calcular a COR do mixer
 int tempoMorango = 0;
 int tempoChocolate = 0;
-float mixerR = 0.0f;
-float mixerG = 0.0f;
-float mixerB = 0.0f;
+float mixerR = 0.0f, mixerB = 0.0f, mixerG = 0.0f;
+float congeladoR = 0, congeladoG = 0, congeladoB = 0;
 float targetR = 0.0f, targetG = 0.0f, targetB = 0.0f;
 bool primeiraCorMixer = true;
 const int R_CREME = 255, G_CREME = 255, B_CREME = 100;
@@ -94,7 +93,7 @@ INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 //===============================================================================================
 void TestaComandoPR() {
     if (!g_protocolo) {
-        OutputDebugStringA("❌ g_protocolo não está inicializado!\n");
+        OutputDebugStringA("g_protocolo não está inicializado!\n");
         return;
     }
 
@@ -138,11 +137,12 @@ void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
         uint8_t digitalIn;
         std::vector<uint16_t> analogIn;
         if (protocolo.readData(digitalIn, analogIn, 2)) {
-            saidas.nivel1 = digitalIn & (1 << 0);
-            saidas.nivel2 = digitalIn & (1 << 1);
-            saidas.nivel3 = digitalIn & (1 << 2);
-            saidas.nivelSaida = digitalIn & (1 << 3);
-            saidas.poteEsteira = digitalIn & (1 << 5); // Bit 5 = pino 13
+			saidas.nivel1 = digitalIn & (1 << 0); // Bit 0 = pino 8
+			saidas.nivel2 = digitalIn & (1 << 1); // Bit 1 = pino 9
+			saidas.nivel3 = digitalIn & (1 << 2); // Bit 2 = pino 10
+			saidas.nivelSaida = digitalIn & (1 << 3); // Bit 3 = pino 11
+            saidas.poteEsteira = digitalIn & (1 << 4); // Bit 4 = pino 12
+			saidas.encherpote = digitalIn & (1 << 5); // Bit 5 = pino 13
 
             if (analogIn.size() >= 2) {
                 saidas.temperatura = analogIn[0];
@@ -312,8 +312,8 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCHOCOLATE), SW_HIDE); // Esconde a válvula de creme ligada
 
         // MIXER
-		SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 70)); // Range de 0 a 70
-		SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, volumecongelamento, 0); // Posição inicial
+		SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETRANGE, 0, MAKELPARAM(0, 70)); // Range de 0 a 70
+		SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETPOS, volumemixer, 0); // Posição inicial
 
         // CONGELAMENTO 
 		SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETRANGE, 0, MAKELPARAM(0, 40)); // Range de 0 a 40
@@ -335,14 +335,14 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
         g_serial = new SerialPort(serialPort);
         if (g_serial->open()) {
-            OutputDebugStringA("✅ Porta aberta com sucesso!\n");
+            OutputDebugStringA("Porta aberta com sucesso!\n");
 
             g_protocolo = new SimulatorProtocol(*g_serial);
             executando = true;
             serialThread = std::thread(loopAtualizacao, std::ref(*g_serial), std::ref(entradas), std::ref(saidas));
         }
         else {
-            OutputDebugStringA("❌ Erro ao abrir porta serial.\n");
+            OutputDebugStringA("Erro ao abrir porta serial.\n");
         }
 
         //=================================
@@ -373,9 +373,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
         case IDC_CHECKCREME:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED; // Verifica se o checkbox está marcado
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCREME), checked ? SW_SHOW : SW_HIDE); // Mostra ou esconde a válvula de creme ligada
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCREME), checked ? SW_HIDE : SW_SHOW); // Mostra ou esconde a válvula de creme desligada
+			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED || saidas.nivel1; // Verifica se o checkbox está marcado
             if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
 				tempmixer = temp1; // aplica direto a primeira temperatura sendo creme
             }
@@ -384,9 +382,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         break;
         case IDC_CHECKMORANGO:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED; // Verifica se o checkbox está marcado
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMORANGO), checked ? SW_SHOW : SW_HIDE); // Mostra ou esconde a válvula de morango ligada
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMORANGO), checked ? SW_HIDE : SW_SHOW); // Mostra ou esconde a válvula de morango desligada
+			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED || saidas.nivel2; // Verifica se o checkbox está marcado
             if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
                 tempmixer = temp2; // aplica direto a primeira temperatura sendo creme
             }
@@ -395,9 +391,7 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         break;
         case IDC_CHECKCHOCOLATE:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED; // Verifica se o checkbox está marcado
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCHOCOLATE), checked ? SW_SHOW : SW_HIDE); // Mostra ou esconde a válvula de chocolate ligada
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCHOCOLATE), checked ? SW_HIDE : SW_SHOW); // Mostra ou esconde a válvula de chocolate desligada
+			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED || saidas.nivel3; // Verifica se o checkbox está marcado
             if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
                 tempmixer = temp3; // aplica direto a primeira temperatura sendo creme
             }
@@ -406,12 +400,8 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         break;
         case IDC_CHECKMIXER:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED; // Verifica se o checkbox está marcado
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMIXER), checked ? SW_SHOW : SW_HIDE); // Mostra ou esconde a válvula do mixer ligada
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMIXER), checked ? SW_HIDE : SW_SHOW); // Mostra ou esconde a válvula do mixer desligada
-
+            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED || saidas.nivelSaida;
             if (checked) {
-                // Atualiza imediatamente a temperatura e a interface
                 tempcongelamento = tempmixer;
                 tempTargetCongelamento = tempmixer;
 
@@ -420,15 +410,14 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
                 SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
             }
             else {
-                tempTargetCongelamento = -25; // mínimo de -25 graus
+                tempTargetCongelamento = -25;  // ⬅️ Aqui ocorre o resfriamento gradual!
             }
         }
         break;
+
         case IDC_CHECKCONGELADO:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED; // Verifica se o checkbox está marcado
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCONGELADO), checked ? SW_SHOW : SW_HIDE); // Mostra ou esconde a válvula de congelamento ligada
-			ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCONGELADO), checked ? SW_HIDE : SW_SHOW); // Mostra ou esconde a válvula de congelamento desligada
+			BOOL checked = (IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED || saidas.poteEsteira); // Verifica se o checkbox está marcado
         }
         break;
         case IDC_CHECKRESETVOLUMES:

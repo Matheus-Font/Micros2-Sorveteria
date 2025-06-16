@@ -1,97 +1,98 @@
-// WindowsProject.cpp : Define o ponto de entrada para o aplicativo.
-//
+// Projeto 1 Microcontroladores II - Simulador de Sorveteria
+// Integrantes: Giulia Colombo, Matheus Fontenele e Natã de Souza
+
+/* Includes */
+
 #include "atualiza.h" // Para atualizar os valores de temperatura, pH, volumes, etc.
 #include "Timer.h" // Para o tratamento de timers
 #include "framework.h" // Inclui o arquivo de cabeçalho principal do projeto
 #include "WindowsProject.h" // Inclui o arquivo de cabeçalho do projeto
-#include <CommCtrl.h> // Para usar controles comuns, como barras de progresso, botões, etc.
 #include "SimulatorProtocol.h" // Inclui o protocolo de simulação para comunicação com o Arduino
-
-//===============================================================================================
-SerialPort* g_serial = nullptr;
-SimulatorProtocol* g_protocolo = nullptr;
-//===============================================================================================
-
-#define MAX_LOADSTRING 100
-
 #include "SerialPort.h" // Inclui a classe SerialPort para comunicação serial
+#include <CommCtrl.h> // Para usar controles comuns, como barras de progresso, botões, etc.
 #include <thread> // Para usar threads
 #include <chrono> // Para usar funções de tempo, como sleep_for
 #include <atomic> // Para usar variáveis atômicas, como executando
 
-// Estrutura de controle que pode ser atualizada externamente (ex: por botões)
-typedef struct Entradas {
-    bool valvula1 = false;
-    bool valvula2 = false;
-    bool valvula3 = false;
-    bool valvulaSaida = false;
-    bool misturador = false;
-    bool esteira = false;
-    bool selecao = false;
-    uint16_t temperaturaControle = 512; // valor analógico (0–1023)
-};
+/* Defines */
+#define MAX_LOADSTRING 100
 
-std::atomic<bool> executando(true);
 
-// Variáveis Globais:
-HINSTANCE hInst;                                // instância atual
-WCHAR szTitle[MAX_LOADSTRING];                  // O texto da barra de título
-WCHAR szWindowClass[MAX_LOADSTRING];            // o nome da classe da janela principal
+/* Global Variables */
 
-//VARIÁVEIS GLOBAIS PARA O PROJETO:
-int desperdicio = 15;
-float volumemixer = 0;
-float volumecreme = 30;
-float volumechocolate = 30;
-float volumemorango = 30;
-float volumecongelamento = 0;
-float volumepote = 0;
-float phmixer = 0.0f;
-int ph1 = 7; // pH do tanque creme
-int ph2 = 13; // pH do tanque morango
-int ph3 = 5; // pH do tanque chocolate
-int temp1 = 30; // Temperatura do tanque creme
-int temp2 = 60; // Temperatura do tanque morango
-int temp3 = 80; // Temperatura do tanque chocolate
-int tempmixer = 0; // Temperatura inicial do mixer
+// Volumes tanques e pote
+float volumeCreme = 30;
+float volumeChocolate = 30;
+float volumeMorango = 30;
+float volumeMixer = 0;
+float volumeCongelamento = 0;
+float volumePote = 0;
+// PHs tanques 
+float phMixer = 0.0f;
+int phCreme = 7; // pH do tanque creme
+int phMorango = 13; // pH do tanque morango
+int phChocolate = 5; // pH do tanque chocolate
+// Temperaturas tanques
+int temperaturaCreme = 30; // Temperatura do tanque creme
+int temperaturaMorango = 60; // Temperatura do tanque morango
+int temperaturaChocolate = 80; // Temperatura do tanque chocolate
+int temperaturaMixer = 0; // Temperatura inicial do mixer
+// Variáveis selecionadas
 int tempTargetMixer = -1; // ALVO PARA PRIMEIRA TEMPERATURA DO MIXER
 float phTargetMixer = -1.0f;
 int tempTargetCongelamento = 0; // ALVO PARA PRIMEIRA TEMPERATURA DO CONGELAMENTO
 int tempcongelamento = 0; // Temperatura do congelamento 
 int tanqueSelecionado = 1; // Variável para armazenar o tanque selecionado (1, 2 ou 3)
-char serialPort[100] = "COM1"; // Porta serial padrão (pode ser alterada pelo usuário)
-
+// Timers
 int tempoCreme = 0; // Tempos para calcular a COR do mixer
 int tempoMorango = 0;
 int tempoChocolate = 0;
+// Cores do mixer
 float mixerR = 0.0f, mixerB = 0.0f, mixerG = 0.0f;
+// Cores congelado
 float congeladoR = 0, congeladoG = 0, congeladoB = 0;
+// Cores alvo
 float targetR = 0.0f, targetG = 0.0f, targetB = 0.0f;
 bool primeiraCorMixer = true;
+
+// Cores padrão tanques base
 const int R_CREME = 255, G_CREME = 255, B_CREME = 100;
 const int R_MORANGO = 255, G_MORANGO = 80, B_MORANGO = 80;
 const int R_CHOCOLATE = 123, G_CHOCOLATE = 63, B_CHOCOLATE = 0;
 
 bool mostrarMix1 = true;
+
+// Variável para indicar se o pote está abaixo do mixer
 bool poteAbaixoDoMixer = false;
 
+// Porta serial
+char serialPort[100] = "COM1"; // Porta serial padrão (pode ser alterada pelo usuário)
+
+// Thread para leitura contínua do protocolo
 std::thread serialThread;
+
+// Estrutura de controle para variáveis de entrada e saída
 Entradas entradas;
-Saidas saidas;
 
+// Variáveis globais para a instância do aplicativo e strings de título
+HINSTANCE hInst;                                // instância atual
+WCHAR szTitle[MAX_LOADSTRING];                  // O texto da barra de título
+WCHAR szWindowClass[MAX_LOADSTRING];            // o nome da classe da janela principal
 
-// Declarações de encaminhamento de funções incluídas nesse módulo de código:
+// Variáveis globais para a porta serial e protocolo
+SerialPort* g_serial = nullptr;
+SimulatorProtocol* g_protocolo = nullptr;
+
+// Declarações de funções
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
-
 INT_PTR CALLBACK    MainDialogProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    WelcomeDialogProc(HWND, UINT, WPARAM, LPARAM);
 
+// Função para leitura continua do protocolo
+std::atomic<bool> executando(true);
 
-// Objetos de classes internas ao projeto
-// SimulatorProtocol* simProto = nullptr;
-
-//===============================================================================================
+/* Functions */
 void TestaComandoPR() {
     if (!g_protocolo) {
         OutputDebugStringA("g_protocolo não está inicializado!\n");
@@ -110,52 +111,40 @@ void TestaComandoPR() {
         OutputDebugStringA("[TESTE PR] Falha na leitura da serial (readData)\n");
     }
 }
-//===============================================================================================
 
-
-void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
+void loopAtualizacao(SerialPort& serial, Entradas& entradas) {
     SimulatorProtocol protocolo(serial);
 
-    // TESTE MANUAL APÓS INICIAR A SERIAL
-    
-    //===============================================================================================
     while (executando.load()) {
-        // 1. Montar bits digitais
-        uint16_t bits = 0;
-        bits |= entradas.valvula1 << 0;
-        bits |= entradas.valvula2 << 1;
-        bits |= entradas.valvula3 << 2;
-        bits |= entradas.valvulaSaida << 3;
-        bits |= entradas.misturador << 4;
-        bits |= entradas.esteira << 5;
-        bits |= entradas.selecao << 6;
+        // 1. Monta byte saidas digitais
+		uint8_t digitalOut = 0;
+        // Indicadores tanque vazio
+        digitalOut |= volumeCreme <  5.0f ? (1 << 0) : 0;
+        digitalOut |= volumeMorango < 5.0f ? (1 << 1) : 0;
+        digitalOut |= volumeChocolate < 5.0f ? (1 << 2) : 0;
+        digitalOut |= volumeCongelamento < 5.0f ? (1 << 3) : 0;
+		// Indicador de pote abaixo do mixer
+        digitalOut |= poteAbaixoDoMixer ? (1 << 4) : 0;
 
-        // 2. Enviar dados
-        std::vector<uint16_t> analogOut = { entradas.temperaturaControle };
-        protocolo.sendData(bits, analogOut);
+        // 2. Montar bits analogicos
+        std::vector<uint16_t> analogOut = { };
+        // 3. Enviar dados
+        protocolo.sendData(digitalOut, analogOut);
 
         // 3. Ler resposta
         uint8_t digitalIn;
         std::vector<uint16_t> analogIn;
-        if (protocolo.readData(digitalIn, analogIn, 2)) {
-			saidas.nivel1 = digitalIn & (1 << 0); // Bit 0 = pino 8
-			saidas.nivel2 = digitalIn & (1 << 1); // Bit 1 = pino 9
-			saidas.nivel3 = digitalIn & (1 << 2); // Bit 2 = pino 10
-			saidas.nivelSaida = digitalIn & (1 << 3); // Bit 3 = pino 11
-            saidas.poteEsteira = digitalIn & (1 << 4); // Bit 4 = pino 12
-			saidas.encherpote = digitalIn & (1 << 5); // Bit 5 = pino 13
+        if (protocolo.readData(digitalIn, analogIn, 1)) {
+			entradas.valvulaCreme = digitalIn & (1 << 0);
+			entradas.valvulaMorango = digitalIn & (1 << 1);
+			entradas.valvulaChocolate = digitalIn & (1 << 2);
+            entradas.valvulaMixer = digitalIn & (1 << 3);
+            entradas.valvulaCongelamento = digitalIn & (1 << 4);
+			entradas.esteira = digitalIn & (1 << 5);
 
-            if (analogIn.size() >= 6) {
-                // Atualiza os volumes com os valores lidos da serial (convertendo de 0–1023 para litros)
-                volumecreme = analogIn[0] * 0.04f;
-                volumemorango = analogIn[1] * 0.04f;
-                volumechocolate = analogIn[2] * 0.04f;
-                volumecongelamento = analogIn[3] * 0.04f;
-
-                saidas.temperatura = analogIn[4];
-                saidas.ph = analogIn[5];
-            }
-
+            // TO TEST:
+            // Lê temperatura alvo para congelamento
+            tempTargetCongelamento = analogIn[0];
 
             // DEBUG: imprime todos os bits recebidos
             char debug[100];
@@ -171,10 +160,10 @@ void loopAtualizacao(SerialPort& serial, Entradas& entradas, Saidas& saidas) {
             OutputDebugStringA("\n");
         }
 
+		// Delay 5 ms (intervalo entre as mensagens)
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
- } //===============================================================================================
-
+ }
 
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
@@ -215,7 +204,6 @@ fim:
     return 0;
 }
 
-
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -235,9 +223,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ICONE));
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICONE));
 
-
-
-
     return RegisterClassExW(&wcex);
 }
 
@@ -256,195 +241,172 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
-
-
 INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_INITDIALOG:
     {
+        // Ícones da janela
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
+        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE)));
 
-        //FORÇA O ICONE NA JANELA E NA BARRA DE TAREFAS.
-		SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE))); // Icone pequeno
-		HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICONE)); // Carrega o ícone
-		SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICONE))); // Icone grande
+        // Botão de Temperatura / pH
+        CheckDlgButton(hDlg, IDC_RADIOTEMP, BST_CHECKED);
+        AtualizaValorTempPh(hDlg);
 
-
-        //Botão de Temperatura / Ph  
-        CheckDlgButton(hDlg, IDC_RADIOTEMP, BST_CHECKED); // Estado inicial do botão de temperatura
-        AtualizaValorTempPh(hDlg); // Atualiza o valor de temperatura ou pH com base no botão selecionado
-       
         // Inicializa os valores de temperatura nos tanques
         WCHAR buffer[16];
-        swprintf(buffer, 16, L"%d(C)", temp2);
+        swprintf(buffer, 16, L"%d(C)", temperaturaMorango);
         SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
-        swprintf(buffer, 16, L"%d(C)", temp1);
+        swprintf(buffer, 16, L"%d(C)", temperaturaCreme);
         SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
-        swprintf(buffer, 16, L"%d(C)", temp3);
+        swprintf(buffer, 16, L"%d(C)", temperaturaChocolate);
         SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
-        swprintf(buffer, 16, L"%d(C)", tempmixer);
+        swprintf(buffer, 16, L"%d(C)", temperaturaMixer);
         SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
         swprintf(buffer, 16, L"%d(C)", tempcongelamento);
         SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
-                  
-        // Inicializa a barra de progresso EXTERNA (VISIVEL)
-        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 100)); // Limites de escala da barra de progresso
-        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, tempcongelamento, 0); // Valor da barra de progresso
+
+        // Barra de progresso externa (congelamento)
+        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        SendDlgItemMessage(hDlg, IDC_PROGRESSTEMP, PBM_SETPOS, tempcongelamento, 0);
         HWND hProg = GetDlgItem(hDlg, IDC_PROGRESSTEMP);
-        SendMessage(hProg, PBM_SETBARCOLOR, 0, (LPARAM)RGB(255, 0, 0)); // COR VERMELHA (VALOR RED, VALOR GREEN, VALOR BLUE)
-      
-        // CREME
-        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETRANGE, 0, MAKELPARAM(0, 30)); //Range de 0 a 30
-        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, volumecreme, 0); // Posição inicial
+        SendMessage(hProg, PBM_SETBARCOLOR, 0, (LPARAM)RGB(255, 0, 0));
+
+        // Creme
+        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETRANGE, 0, MAKELPARAM(0, 30));
+        SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, volumeCreme, 0);
         HWND hProgCreme = GetDlgItem(hDlg, IDC_CREME);
-        SendMessage(hProgCreme, PBM_SETBARCOLOR, 0, (LPARAM)RGB(R_CREME, G_CREME, B_CREME)); // Cor
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCREME), SW_SHOW); // Mostra a válvula de creme desligada
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCREME), SW_HIDE); // Esconde a válvula de creme ligada
+        SendMessage(hProgCreme, PBM_SETBARCOLOR, 0, (LPARAM)RGB(R_CREME, G_CREME, B_CREME));
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCREME), SW_SHOW);
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCREME), SW_HIDE);
 
-
-        // MORANGO
-        SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETRANGE, 0, MAKELPARAM(0, 30)); //Range de 0 a 30
-		SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, volumemorango, 0); // Posição inicial
+        // Morango
+        SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETRANGE, 0, MAKELPARAM(0, 30));
+        SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, volumeMorango, 0);
         HWND hProgMorango = GetDlgItem(hDlg, IDC_MORANGO);
         SendMessage(hProgMorango, PBM_SETBARCOLOR, 0, (LPARAM)RGB(R_MORANGO, G_MORANGO, B_MORANGO));
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMORANGO), SW_SHOW); // Mostra a válvula de creme desligada
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMORANGO), SW_HIDE); // Esconde a válvula de creme ligada
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFMORANGO), SW_SHOW);
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONMORANGO), SW_HIDE);
 
-        // CHOCOLATE
-		SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETRANGE, 0, MAKELPARAM(0, 30)); //Range de 0 a 30
-		SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, volumechocolate, 0); // Posição inicial
+        // Chocolate
+        SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETRANGE, 0, MAKELPARAM(0, 30));
+        SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, volumeChocolate, 0);
         HWND hProgChocolate = GetDlgItem(hDlg, IDC_CHOCOLATE);
         SendMessage(hProgChocolate, PBM_SETBARCOLOR, 0, (LPARAM)RGB(R_CHOCOLATE, G_CHOCOLATE, B_CHOCOLATE));
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCHOCOLATE), SW_SHOW); // Mostra a válvula de creme desligada
-        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCHOCOLATE), SW_HIDE); // Esconde a válvula de creme ligada
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAOFFCHOCOLATE), SW_SHOW);
+        ShowWindow(GetDlgItem(hDlg, IDC_VALVULAONCHOCOLATE), SW_HIDE);
 
-        // MIXER
-		SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETRANGE, 0, MAKELPARAM(0, 70)); // Range de 0 a 70
-		SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETPOS, volumemixer, 0); // Posição inicial
+        // Mixer
+        SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETRANGE, 0, MAKELPARAM(0, 70));
+        SendDlgItemMessage(hDlg, IDC_PROGRESSMIXER, PBM_SETPOS, volumeMixer, 0);
 
-        // CONGELAMENTO 
-		SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETRANGE, 0, MAKELPARAM(0, 40)); // Range de 0 a 40
-		SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, volumecongelamento, 0); // Posição inicial
+        // Congelamento
+        SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETRANGE, 0, MAKELPARAM(0, 40));
+        SendDlgItemMessage(hDlg, IDC_PROGRESSCONGELAMENTO, PBM_SETPOS, volumeCongelamento, 0);
 
-        //POTE    
-        // Inicializa o valor e o range da barra
-		SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETRANGE, 0, MAKELPARAM(0, 2.5)); // Range de 0 a 2.5 
-		SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumepote, 0); // Posição inicial
+        // Pote
+        SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETRANGE, 0, MAKELPARAM(0, 2.5));
+        SendDlgItemMessage(hDlg, IDC_PROGRESSPOTE, PBM_SETPOS, (int)volumePote, 0);
+        HWND hPote = GetDlgItem(hDlg, IDC_POTE);
+        HWND hBarra = GetDlgItem(hDlg, IDC_PROGRESSPOTE);
+        ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SWP_SHOWWINDOW);
 
-
-		HWND hPote = GetDlgItem(hDlg, IDC_POTE); // Obtém o handle do pote
-		HWND hBarra = GetDlgItem(hDlg, IDC_PROGRESSPOTE); // Obtém o handle da barra de progresso do pote
-
-		ShowWindow(GetDlgItem(hDlg, IDC_PROGRESSPOTE), SWP_SHOWWINDOW); // Mostra a barra de progresso do pote
-
-     
-        //=================================
-
+        // Comunicação Serial
         g_serial = new SerialPort(serialPort);
         if (g_serial->open()) {
             OutputDebugStringA("Porta aberta com sucesso!\n");
-
             g_protocolo = new SimulatorProtocol(*g_serial);
             executando = true;
-            serialThread = std::thread(loopAtualizacao, std::ref(*g_serial), std::ref(entradas), std::ref(saidas));
+            serialThread = std::thread(loopAtualizacao, std::ref(*g_serial), std::ref(entradas));
         }
         else {
             OutputDebugStringA("Erro ao abrir porta serial.\n");
         }
 
-        //=================================
-
-
-
-      
-
-        SetTimer(hDlg, 1, 10, NULL); // Timer com ID 1 e intervalo de 10ms
-		AtualizaVolumes(hDlg);  // Atualiza os volumes iniciais na interface
-		AtualizaValorTempPh(hDlg); // Atualiza os valores de temperatura e pH na interface
+        SetTimer(hDlg, 1, 10, NULL);
+        AtualizaVolumes(hDlg);
+        AtualizaValorTempPh(hDlg);
 
         return (INT_PTR)TRUE;
     }
 
     case WM_TIMER:
-		HandleTimer(hDlg, wParam, lParam); // Chama a função de tratamento do timer
+        HandleTimer(hDlg, wParam, lParam);
         break;
 
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
-            // Botões de controle
         case IDC_RADIOTEMP:
         case IDC_RADIOPH:
-			AtualizaValorTempPh(hDlg); // Atualiza o valor de temperatura ou pH com base no botão selecionado
+            AtualizaValorTempPh(hDlg);
             break;
 
         case IDC_CHECKCREME:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED || saidas.nivel1; // Verifica se o checkbox está marcado
-            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
-				tempmixer = temp1; // aplica direto a primeira temperatura sendo creme
-            }
-			tempTargetMixer = temp1; // Define a temperatura alvo do mixer para creme
+            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCREME) == BST_CHECKED || entradas.valvulaCreme;
+            if (tempTargetMixer == -1 && volumeMixer == 0.0f)
+                temperaturaMixer = temperaturaCreme;
+            tempTargetMixer = temperaturaCreme;
         }
         break;
+
         case IDC_CHECKMORANGO:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED || saidas.nivel2; // Verifica se o checkbox está marcado
-            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
-                tempmixer = temp2; // aplica direto a primeira temperatura sendo creme
-            }
-			tempTargetMixer = temp2; // Define a temperatura alvo do mixer para morango
+            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMORANGO) == BST_CHECKED || entradas.valvulaMorango;
+            if (tempTargetMixer == -1 && volumeMixer == 0.0f)
+                temperaturaMixer = temperaturaMorango;
+            tempTargetMixer = temperaturaMorango;
         }
         break;
+
         case IDC_CHECKCHOCOLATE:
         {
-			BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED || saidas.nivel3; // Verifica se o checkbox está marcado
-            if (tempTargetMixer == -1 && volumemixer == 0.0f) { //Muda a temperatura do mixer inicial
-                tempmixer = temp3; // aplica direto a primeira temperatura sendo creme
-            }
-			tempTargetMixer = temp3; // Define a temperatura alvo do mixer para chocolate
+            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKCHOCOLATE) == BST_CHECKED || entradas.valvulaChocolate;
+            if (tempTargetMixer == -1 && volumeMixer == 0.0f)
+                temperaturaMixer = temperaturaChocolate;
+            tempTargetMixer = temperaturaChocolate;
         }
         break;
+
         case IDC_CHECKMIXER:
         {
-            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED || saidas.nivelSaida;
+            BOOL checked = IsDlgButtonChecked(hDlg, IDC_CHECKMIXER) == BST_CHECKED || entradas.valvulaMixer;
             if (checked) {
-                tempcongelamento = tempmixer;
-                tempTargetCongelamento = tempmixer;
+                tempcongelamento = temperaturaMixer;
+                tempTargetCongelamento = temperaturaMixer;
 
                 WCHAR buffer[16];
                 swprintf(buffer, 16, L"%d(\x00B0\C)", tempcongelamento);
                 SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
             }
             else {
-                tempTargetCongelamento = -25;  // ⬅️ Aqui ocorre o resfriamento gradual!
+                tempTargetCongelamento = -25;
             }
         }
         break;
 
         case IDC_CHECKCONGELADO:
         {
-			BOOL checked = (IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED || saidas.poteEsteira); // Verifica se o checkbox está marcado
+            BOOL checked = (IsDlgButtonChecked(hDlg, IDC_CHECKCONGELADO) == BST_CHECKED || entradas.esteira);
         }
         break;
+
         case IDC_CHECKRESETVOLUMES:
         {
-			if (IsDlgButtonChecked(hDlg, IDC_CHECKRESETVOLUMES) == BST_CHECKED) // Se o checkbox estiver marcado
+            if (IsDlgButtonChecked(hDlg, IDC_CHECKRESETVOLUMES) == BST_CHECKED)
             {
-				// Reseta os volumes para os valores iniciais
-                volumecreme = 30.0f;
-                volumemorango = 30.0f;
-                volumechocolate = 30.0f;
+                volumeCreme = 30.0f;
+                volumeMorango = 30.0f;
+                volumeChocolate = 30.0f;
 
-                // Atualiza as barras de progresso
-                SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, (int)volumecreme, 0);
-                SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, (int)volumemorango, 0);
-                SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, (int)volumechocolate, 0);
-                               
-                AtualizaVolumes(hDlg); // Atualiza os valores numéricos
+                SendDlgItemMessage(hDlg, IDC_CREME, PBM_SETPOS, (int)volumeCreme, 0);
+                SendDlgItemMessage(hDlg, IDC_MORANGO, PBM_SETPOS, (int)volumeMorango, 0);
+                SendDlgItemMessage(hDlg, IDC_CHOCOLATE, PBM_SETPOS, (int)volumeChocolate, 0);
 
-                // Desmarca automaticamente o checkbox após o reset
+                AtualizaVolumes(hDlg);
                 CheckDlgButton(hDlg, IDC_CHECKRESETVOLUMES, BST_UNCHECKED);
             }
         }
@@ -455,16 +417,16 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
             MessageBoxA(hDlg, serialPort, "Serial resetada para", MB_OK | MB_ICONINFORMATION);
             return TRUE;
 
-            // Se clicar "Fechar"...
         case IDCANCEL:
             DestroyWindow(hDlg);
             break;
         }
         break;
-        // Se clicar no "X" da janela principal...
+
     case WM_CLOSE:
         DestroyWindow(hDlg);
         break;
+
     case WM_DESTROY:
         executando = false;
         if (serialThread.joinable()) serialThread.join();
@@ -472,14 +434,12 @@ INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
         delete g_protocolo;
         delete g_serial;
 
-
         PostQuitMessage(0);
         break;
     }
-
-
     return FALSE;
 }
+
 
 std::wstring to_wstring(const std::string& str) {
     return std::wstring(str.begin(), str.end());
@@ -542,4 +502,3 @@ INT_PTR CALLBACK WelcomeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARA
 
     return (INT_PTR)FALSE;
 }
-

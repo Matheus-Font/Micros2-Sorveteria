@@ -6,11 +6,11 @@
 #include "WindowsProject.h"
 
 // Variáveis globais usadas nas atualizações (vindas de outro .cpp)
-extern int temp1, temp2, temp3;
-extern int tempmixer, tempcongelamento;
-extern int ph1, ph2, ph3;
-extern float volumecreme, volumemorango, volumechocolate, phmixer;
-extern float volumemixer, volumecongelamento, volumepote;
+extern int temperaturaCreme, temperaturaMorango, temperaturaChocolate;
+extern int temperaturaMixer, tempcongelamento;
+extern int phCreme, phMorango, phChocolate;
+extern float volumeCreme, volumeMorango, volumeChocolate, phMixer;
+extern float volumeMixer, volumeCongelamento, volumePote;
 
 
 void AtualizaValorTempPh(HWND hDlg) {
@@ -25,34 +25,34 @@ void AtualizaValorTempPh(HWND hDlg) {
     if (IsDlgButtonChecked(hDlg, IDC_RADIOTEMP) == BST_CHECKED) {
         SetDlgItemText(hDlg, IDC_STATICTPH, L"Temperatura (\x00B0\C):");
         SetDlgItemText(hDlg, IDC_STATIC, L"Temperatura (\x00B0\C):");
-        valor = tempmixer;
+        valor = temperaturaMixer;
     }
     else {
         SetDlgItemText(hDlg, IDC_STATICTPH, L"Valor de pH:");
         SetDlgItemText(hDlg, IDC_STATIC, L"Valor de pH:");
-        valor = phmixer;
+        valor = phMixer;
     }
 
     WCHAR buffer[16];
-    swprintf(buffer, 16, L"%d(\x00B0\C)", temp1);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temperaturaCreme);
     SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
-    swprintf(buffer, 16, L"%d(\x00B0\C)", temp2);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temperaturaMorango);
     SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
-    swprintf(buffer, 16, L"%d(\x00B0\C)", temp3);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temperaturaChocolate);
     SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
-    swprintf(buffer, 16, L"%d(\x00B0\C)", tempmixer);
+    swprintf(buffer, 16, L"%d(\x00B0\C)", temperaturaMixer);
     SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
     swprintf(buffer, 16, L"%d(\x00B0\C)", tempcongelamento);
     SetDlgItemText(hDlg, IDC_TPHCONGELAMENTO, buffer);
 
     if (IsDlgButtonChecked(hDlg, IDC_RADIOPH) == BST_CHECKED) {
-        swprintf(buffer, 16, L"pH %d", ph1);
+        swprintf(buffer, 16, L"pH %d", phCreme);
         SetDlgItemText(hDlg, IDC_TPHCREME, buffer);
-        swprintf(buffer, 16, L"pH %d", ph2);
+        swprintf(buffer, 16, L"pH %d", phMorango);
         SetDlgItemText(hDlg, IDC_TPHMORANGO, buffer);
-        swprintf(buffer, 16, L"pH %d", ph3);
+        swprintf(buffer, 16, L"pH %d", phChocolate);
         SetDlgItemText(hDlg, IDC_TPHCHOCOLATE, buffer);
-        swprintf(buffer, 16, L"pH %d", phmixer);
+        swprintf(buffer, 16, L"pH %d", phMixer);
         SetDlgItemText(hDlg, IDC_TPHMIXER, buffer);
     }
 
@@ -62,21 +62,21 @@ void AtualizaValorTempPh(HWND hDlg) {
 void AtualizaVolumes(HWND hDlg) {
     WCHAR buffer[16];
 
-    swprintf(buffer, 16, L"%.1f", volumecreme);
+    swprintf(buffer, 16, L"%.1f", volumeCreme);
     SetDlgItemText(hDlg, IDC_VOLUMECREME, buffer);
 
-    swprintf(buffer, 16, L"%.1f", volumemorango);
+    swprintf(buffer, 16, L"%.1f", volumeMorango);
     SetDlgItemText(hDlg, IDC_VOLUMEMORANGO, buffer);
 
-    swprintf(buffer, 16, L"%.1f", volumechocolate);
+    swprintf(buffer, 16, L"%.1f", volumeChocolate);
     SetDlgItemText(hDlg, IDC_VOLUMECHOCOLATE, buffer);
 
-    swprintf(buffer, 16, L"%.1f", volumemixer);
+    swprintf(buffer, 16, L"%.1f", volumeMixer);
     SetDlgItemText(hDlg, IDC_VOLUMEMIXER, buffer);
 
-    swprintf(buffer, 16, L"%.1f", volumecongelamento);
+    swprintf(buffer, 16, L"%.1f", volumeCongelamento);
     SetDlgItemText(hDlg, IDC_VOLUMECONGELAMENTO, buffer);
 
-    swprintf(buffer, 16, L"%.1f", volumepote);
+    swprintf(buffer, 16, L"%.1f", volumePote);
     SetDlgItemText(hDlg, IDC_VOLUMEPOTE, buffer);
 }

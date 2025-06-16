@@ -5,9 +5,16 @@
 #include "SerialPort.h"
 #include "SimulatorProtocol.h" // Inclui o protocolo de simulação para comunicação com o Arduino
 
-typedef struct Saidas {
-    bool nivel1, nivel2, nivel3, nivelSaida, poteEsteira, encherpote;
-    uint16_t temperatura, ph;
+// Estrutura de controle para variáveis de saída
+typedef struct Entradas {
+    bool valvulaCreme;
+    bool valvulaMorango;
+    bool valvulaChocolate;
+    bool valvulaCongelamento;
+    bool valvulaMixer;
+	bool esteira;
+    uint16_t temperatura;
+    uint16_t ph;
 } Saidas;
 
 void HandleTimer(HWND hDlg, WPARAM wParam, LPARAM lParam);
